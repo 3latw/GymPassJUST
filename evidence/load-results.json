@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-01T16:41:51.546Z",
+  "timestamp": "2026-11-02T12:50:32.240Z",
   "environment": {
     "node": "v24.14.1",
     "os": "win32",
@@ -13,9 +13,9 @@
       "confirmed": 20,
       "waitlisted": 80,
       "failed": 0,
-      "p95Ms": 366.14,
-      "maxMs": 373.73,
-      "wallMs": 424.99,
+      "p95Ms": 527.36,
+      "maxMs": 534.17,
+      "wallMs": 585.99,
       "passed": true
     },
     {
@@ -24,9 +24,9 @@
       "confirmed": 20,
       "waitlisted": 280,
       "failed": 0,
-      "p95Ms": 689.93,
-      "maxMs": 716.89,
-      "wallMs": 759.12,
+      "p95Ms": 894.84,
+      "maxMs": 926.41,
+      "wallMs": 976.62,
       "passed": true
     }
   ]

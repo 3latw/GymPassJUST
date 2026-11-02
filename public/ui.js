@@ -36,15 +36,83 @@ export const icon = (name) =>
 export const brand = () =>
   '<a class="brand" href="/"><img src="/just-logo.png" alt="شعار جامعة العلوم والتكنولوجيا الأردنية"><span><strong lang="en">GymPassJUST</strong><small>جامعة العلوم والتكنولوجيا الأردنية</small></span></a>';
 export function loginMarkup(register, oidc = false) {
-  return `<main id="main" class="auth-page"><header class="auth-brand">${brand()}</header><section class="auth-card"><div class="auth-intro"><img src="/just-logo.png" alt="" width="88" height="88"><h1>${register ? "إنشاء حساب طالب" : "تسجيل الدخول"}</h1><p>المركز الرياضي · جامعة العلوم والتكنولوجيا الأردنية</p></div>${oidc ? '<a class="button auth-submit" href="/auth/login">الدخول بالحساب الجامعي</a>' : `<form id="${register ? "register-form" : "login-form"}">${register ? '<label for="auth-name">الاسم الكامل</label><input id="auth-name" name="name" autocomplete="name" minlength="2" maxlength="100" required>' : ""}<label for="auth-email">البريد الإلكتروني</label><input id="auth-email" name="email" type="email" dir="ltr" autocomplete="username" maxlength="254" required placeholder="name@example.com"><label for="auth-password">كلمة المرور</label><div class="password-field"><input id="auth-password" name="password" type="password" dir="ltr" autocomplete="${register ? "new-password" : "current-password"}" ${register ? 'minlength="12"' : ""} maxlength="128" required><button type="button" data-action="toggle-password" aria-label="إظهار كلمة المرور">إظهار</button></div>${register ? '<p class="field-hint">12 حرفاً على الأقل. استخدم كلمة مرور خاصة بالمشروع.</p><label for="confirm-password">تأكيد كلمة المرور</label><input id="confirm-password" name="confirmPassword" type="password" dir="ltr" autocomplete="new-password" minlength="12" maxlength="128" required>' : ""}<p id="auth-error" class="form-error" role="alert" hidden></p><button type="submit" class="button auth-submit">${register ? "إنشاء الحساب" : "دخول"}</button></form><p class="auth-switch">${register ? 'عندك حساب؟ <a href="/login" data-auth="login">تسجيل الدخول</a>' : 'طالب جديد؟ <a href="/register" data-auth="register">إنشاء حساب</a>'}</p>`}<p class="field-hint auth-note">مشروع المركز الرياضي الجامعي. الحسابات مستقلة عن أنظمة الجامعة الرسمية.</p></section><footer class="auth-footer"><bdi>GymPassJUST</bdi> · المركز الرياضي الجامعي</footer></main>`;
+  return `<main id="main" class="auth-page">
+    <header class="auth-brand">${brand()}</header>
+    <section class="auth-card">
+    <div class="auth-intro">
+    <img src="/just-logo.png" alt="" width="88" height="88">
+    <h1>${register ? "إنشاء حساب طالب" : "تسجيل الدخول"}</h1>
+    <p>المركز الرياضي · جامعة العلوم والتكنولوجيا الأردنية</p>
+    </div>${
+      oidc
+        ? '<a class="button auth-submit" href="/auth/login">الدخول بالحساب الجامعي</a>'
+        : `<form id="${register ? "register-form" : "login-form"}">${register ? '<label for="auth-name">الاسم الكامل</label><input id="auth-name" name="name" autocomplete="name" minlength="2" maxlength="100" required>' : ""}<label for="auth-email">البريد الإلكتروني</label>
+    <input id="auth-email" name="email" type="email" dir="ltr" autocomplete="username" maxlength="254" required placeholder="name@example.com">
+    <label for="auth-password">كلمة المرور</label>
+    <div class="password-field">
+    <input id="auth-password" name="password" type="password" dir="ltr" autocomplete="${register ? "new-password" : "current-password"}" ${register ? 'minlength="12"' : ""} maxlength="128" required>
+    <button type="button" data-action="toggle-password" aria-label="إظهار كلمة المرور">إظهار</button>
+    </div>${register ? '<p class="field-hint">12 حرفاً على الأقل. استخدم كلمة مرور خاصة بالمشروع.</p><label for="confirm-password">تأكيد كلمة المرور</label><input id="confirm-password" name="confirmPassword" type="password" dir="ltr" autocomplete="new-password" minlength="12" maxlength="128" required>' : ""}<p id="auth-error" class="form-error" role="alert" hidden>
+    </p>
+    <button type="submit" class="button auth-submit">${register ? "إنشاء الحساب" : "دخول"}</button>
+    </form>
+    <p class="auth-switch">${register ? 'عندك حساب؟ <a href="/login" data-auth="login">تسجيل الدخول</a>' : 'طالب جديد؟ <a href="/register" data-auth="register">إنشاء حساب</a>'}</p>`
+    }<p class="field-hint auth-note">مشروع المركز الرياضي الجامعي. الحسابات مستقلة عن أنظمة الجامعة الرسمية.</p>
+    </section>
+    <footer class="auth-footer">
+    <bdi>GymPassJUST</bdi> · المركز الرياضي الجامعي</footer>
+    </main>`;
 }
 export function shellMarkup(session, items, roleNames) {
   const u = session.user;
   const nav = () =>
-    `<nav class="nav" aria-label="صفحات النظام">${items.map(([id, , label]) => `<button data-nav="${id}">${icon(id)}<span>${label}</span></button>`).join("")}<button data-nav="account">${icon("account")}<span>حسابي</span></button></nav>`;
+    `<nav class="nav" aria-label="صفحات النظام">${items
+      .map(
+        ([
+          id,
+          ,
+          label,
+        ]) => `<button data-nav="${id}">${icon(id)}<span>${label}</span>
+    </button>`,
+      )
+      .join("")}<button data-nav="account">${icon("account")}<span>حسابي</span>
+    </button>
+    </nav>`;
   const profile = () =>
-    `<div class="drawer-profile"><span class="profile-avatar">${icon("account")}</span><strong>${escapeText(u.name)}</strong><span>${roleNames[u.role]}</span><bdi>${escapeText(u.email)}</bdi></div>`;
-  return `<div class="shell"><aside class="sidebar">${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button><small class="sidebar-version">GymPassJUST · 1.2.1</small></aside><div class="app-body"><header class="university-header">${brand()}</header><header class="topbar"><button class="top-icon menu-toggle" data-action="open-menu" aria-label="فتح القائمة">${icon("menu")}</button><strong id="page-title">الرئيسية</strong><button class="top-icon" data-nav="inbox" aria-label="الإشعارات">${icon("bell")}<span id="unread">${session.unread || ""}</span></button></header><main class="content" id="main" tabindex="-1"></main><nav class="bottom-nav" aria-label="التنقل السريع"><button data-nav="home">${icon("home")}<span>الرئيسية</span></button><button data-nav="classes">${icon("inbox")}<span>${u.role === "instructor" ? "حصصي" : "الحصص"}</span></button><button data-nav="inbox">${icon("bell")}<span>الإشعارات</span></button></nav></div></div><dialog class="menu-dialog" id="menu-panel" aria-label="القائمة الجانبية"><button class="menu-close" data-action="close-menu" aria-label="إغلاق القائمة">×</button>${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button><small class="sidebar-version">GymPassJUST · 1.2.1</small></dialog>`;
+    `<div class="drawer-profile">
+    <span class="profile-avatar">${icon("account")}</span>
+    <strong>${escapeText(u.name)}</strong>
+    <span>${roleNames[u.role]}</span>
+    <bdi>${escapeText(u.email)}</bdi>
+    </div>`;
+  return `<div class="shell">
+    <aside class="sidebar">${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
+    <small class="sidebar-version">GymPassJUST · 1.2.2</small>
+    </aside>
+    <div class="app-body">
+    <header class="university-header">${brand()}</header>
+    <header class="topbar">
+    <button class="top-icon menu-toggle" data-action="open-menu" aria-label="فتح القائمة">${icon("menu")}</button>
+    <strong id="page-title">الرئيسية</strong>
+    <button class="top-icon" data-nav="inbox" aria-label="الإشعارات">${icon("bell")}<span id="unread">${session.unread || ""}</span>
+    </button>
+    </header>
+    <main class="content" id="main" tabindex="-1">
+    </main>
+    <nav class="bottom-nav" aria-label="التنقل السريع">
+    <button data-nav="home">${icon("home")}<span>الرئيسية</span>
+    </button>
+    <button data-nav="classes">${icon("inbox")}<span>${u.role === "instructor" ? "حصصي" : "الحصص"}</span>
+    </button>
+    <button data-nav="inbox">${icon("bell")}<span>الإشعارات</span>
+    </button>
+    </nav>
+    </div>
+    </div>
+    <dialog class="menu-dialog" id="menu-panel" aria-label="القائمة الجانبية">
+    <button class="menu-close" data-action="close-menu" aria-label="إغلاق القائمة">×</button>${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
+    <small class="sidebar-version">GymPassJUST · 1.2.2</small>
+    </dialog>`;
 }
 export function portalMarkup(session, items, roleNames) {
   const role = session.user.role;
@@ -65,35 +133,166 @@ export function portalMarkup(session, items, roleNames) {
     audit: "سجل التدقيق",
     account: "معلومات الحساب",
   };
-  return `<div class="welcome-line"><div><h1>أهلاً، ${escapeText(session.user.name.split(" ")[0])}</h1><p>${roleNames[role]} · خدمات المركز الرياضي</p></div><span class="opening-badge">يومياً <bdi>06:00–23:00</bdi></span></div><section class="service-grid" aria-label="خدمات المركز">${items
-    .filter(([id]) => id !== "home")
-    .concat([["account", "", "حسابي"]])
-    .map(
-      ([id, , label]) =>
-        `<button class="service-card" data-nav="${id}">${icon(id)}<span>${labels[id] || label}</span></button>`,
-    )
-    .join(
-      "",
-    )}</section>${role === "member" ? '<button class="button attendance-button" data-nav="pass">عرض بطاقة الاشتراك</button>' : role === "instructor" ? '<button class="button attendance-button" data-nav="verify">فحص QR وتسجيل الحضور</button>' : '<button class="button attendance-button" data-nav="classes">جدول الحصص</button>'}`;
+  return `<div class="welcome-line">
+    <div>
+    <h1>أهلاً، ${escapeText(session.user.name.split(" ")[0])}</h1>
+    <p>${roleNames[role]} · خدمات المركز الرياضي</p>
+    </div>
+    <span class="opening-badge">يومياً <bdi>06:00–23:00</bdi>
+    </span>
+    </div>
+    <section class="service-grid" aria-label="خدمات المركز">${items
+      .filter(([id]) => id !== "home")
+      .concat([["account", "", "حسابي"]])
+      .map(
+        ([id, , label]) =>
+          `<button class="service-card" data-nav="${id}">${icon(id)}<span>${labels[id] || label}</span>
+    </button>`,
+      )
+      .join(
+        "",
+      )}</section>${role === "member" ? '<button class="button attendance-button" data-nav="pass">عرض بطاقة الاشتراك</button>' : role === "instructor" ? '<button class="button attendance-button" data-nav="verify">فحص QR وتسجيل الحضور</button>' : '<button class="button attendance-button" data-nav="classes">جدول الحصص</button>'}`;
 }
 export function classFormMarkup(session, typeNames) {
-  return `<section class="panel"><h2>نشر حصة جديدة</h2><p class="muted">تظهر الحصة للطلاب مباشرة بعد نشرها. كل المواعيد بتوقيت عمّان.</p><form id="class-form"><div class="form-grid"><div><label for="title">اسم الحصة</label><input id="title" name="title" required minlength="2" maxlength="100"></div><div><label for="type">نوع الحصة</label><select id="type" name="type">${Object.entries(
-    typeNames,
-  )
-    .map(([key, label]) => `<option value="${key}">${label}</option>`)
-    .join(
-      "",
-    )}</select></div>${session.user.role === "manager" ? `<div><label for="instructor">المدرب</label><select id="instructor" name="instructorId">${session.instructors.map((i) => `<option value="${escapeText(i.id)}">${escapeText(i.name)}</option>`).join("")}</select></div>` : `<div><label>المدرب</label><p class="readonly-value">${escapeText(session.user.name)}</p></div>`}<div><label for="studio">القاعة</label><input id="studio" name="studio" required maxlength="100"></div><div><label for="starts">التاريخ ووقت البداية</label><input id="starts" name="starts" type="datetime-local" required></div><div><label for="ends">التاريخ ووقت النهاية</label><input id="ends" name="ends" type="datetime-local" required></div><div><label for="capacity">عدد المقاعد</label><input id="capacity" name="capacity" type="number" min="1" max="500" value="20" required></div></div><p id="class-error" role="alert" class="form-error" hidden></p><div class="form-actions"><button class="button" type="submit">نشر الحصة</button></div></form></section>`;
+  return `<section class="panel">
+    <h2>نشر حصة جديدة</h2>
+    <p class="muted">تظهر الحصة للطلاب مباشرة بعد نشرها. كل المواعيد بتوقيت عمّان.</p>
+    <form id="class-form">
+    <div class="form-grid">
+    <div>
+    <label for="title">اسم الحصة</label>
+    <input id="title" name="title" required minlength="2" maxlength="100">
+    </div>
+    <div>
+    <label for="type">نوع الحصة</label>
+    <select id="type" name="type">${Object.entries(typeNames)
+      .map(([key, label]) => `<option value="${key}">${label}</option>`)
+      .join("")}</select>
+    </div>${
+      session.user.role === "manager"
+        ? `<div>
+    <label for="instructor">المدرب</label>
+    <select id="instructor" name="instructorId">${session.instructors.map((i) => `<option value="${escapeText(i.id)}">${escapeText(i.name)}</option>`).join("")}</select>
+    </div>`
+        : `<div>
+    <label>المدرب</label>
+    <p class="readonly-value">${escapeText(session.user.name)}</p>
+    </div>`
+    }<div>
+    <label for="studio">القاعة</label>
+    <input id="studio" name="studio" required maxlength="100">
+    </div>
+    <div>
+    <label for="starts">التاريخ ووقت البداية</label>
+    <input id="starts" name="starts" type="datetime-local" required>
+    </div>
+    <div>
+    <label for="ends">التاريخ ووقت النهاية</label>
+    <input id="ends" name="ends" type="datetime-local" required>
+    </div>
+    <div>
+    <label for="capacity">عدد المقاعد</label>
+    <input id="capacity" name="capacity" type="number" min="1" max="500" value="20" required>
+    </div>
+    </div>
+    <p id="class-error" role="alert" class="form-error" hidden>
+    </p>
+    <div class="form-actions">
+    <button class="button" type="submit">نشر الحصة</button>
+    </div>
+    </form>
+    </section>`;
 }
 export function accountMarkup(session, roleNames) {
-  return `<header class="page-heading"><div><h1>معلومات الحساب</h1><p>بيانات دخولك إلى GymPassJUST</p></div></header><div class="split"><section class="panel"><h2>${escapeText(session.user.name)}</h2><p><bdi>${escapeText(session.user.email)}</bdi></p><p>نوع الحساب: ${roleNames[session.user.role]}</p></section><section class="panel"><h2>تغيير كلمة المرور</h2><form id="password-form"><label for="current-password">كلمة المرور الحالية</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" dir="ltr" maxlength="128" required><label for="new-password">كلمة المرور الجديدة</label><input id="new-password" name="password" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required><label for="password-confirm">تأكيد الكلمة الجديدة</label><input id="password-confirm" name="confirmPassword" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required><p class="field-hint">12 حرفاً على الأقل. سيتم إنهاء جلسات الدخول الأخرى.</p><div class="form-actions"><button class="button" type="submit">حفظ كلمة المرور</button></div></form></section></div>`;
+  return `<header class="page-heading">
+    <div>
+    <h1>معلومات الحساب</h1>
+    <p>بيانات دخولك إلى GymPassJUST</p>
+    </div>
+    </header>
+    <div class="split">
+    <section class="panel">
+    <h2>${escapeText(session.user.name)}</h2>
+    <p>
+    <bdi>${escapeText(session.user.email)}</bdi>
+    </p>
+    <p>نوع الحساب: ${roleNames[session.user.role]}</p>
+    </section>
+    <section class="panel">
+    <h2>تغيير كلمة المرور</h2>
+    <form id="password-form">
+    <label for="current-password">كلمة المرور الحالية</label>
+    <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" dir="ltr" maxlength="128" required>
+    <label for="new-password">كلمة المرور الجديدة</label>
+    <input id="new-password" name="password" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required>
+    <label for="password-confirm">تأكيد الكلمة الجديدة</label>
+    <input id="password-confirm" name="confirmPassword" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required>
+    <p class="field-hint">12 حرفاً على الأقل. سيتم إنهاء جلسات الدخول الأخرى.</p>
+    <div class="form-actions">
+    <button class="button" type="submit">حفظ كلمة المرور</button>
+    </div>
+    </form>
+    </section>
+    </div>`;
 }
 export function accountsMarkup(rows, roleNames) {
-  return `<header class="page-heading"><div><h1>إدارة الحسابات</h1><p>إنشاء حساب طالب أو موظف وتحديد صلاحياته.</p></div></header><section class="panel"><h2>إضافة حساب</h2><form id="account-form"><div class="form-grid"><div><label for="new-name">الاسم الكامل</label><input id="new-name" name="name" minlength="2" maxlength="100" required></div><div><label for="new-email">البريد الإلكتروني</label><input id="new-email" name="email" type="email" dir="ltr" maxlength="254" required></div><div><label for="new-role">نوع الحساب</label><select id="new-role" name="role">${Object.entries(
-    roleNames,
-  )
-    .map(([r, label]) => `<option value="${r}">${label}</option>`)
-    .join(
-      "",
-    )}</select></div><div><label for="staff-password">كلمة المرور الأولية</label><input id="staff-password" name="password" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required></div></div><div class="form-actions"><button class="button" type="submit">إنشاء الحساب</button></div></form></section><section class="panel"><h2>آخر الحسابات المحلية</h2><div class="table-wrap"><table><thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الصلاحية</th></tr></thead><tbody>${rows.map((u) => `<tr><td>${escapeText(u.name)}</td><td><bdi>${escapeText(u.email)}</bdi></td><td>${roleNames[u.role]}</td></tr>`).join("")}</tbody></table></div></section>`;
+  return `<header class="page-heading">
+    <div>
+    <h1>إدارة الحسابات</h1>
+    <p>إنشاء حساب طالب أو موظف وتحديد صلاحياته.</p>
+    </div>
+    </header>
+    <section class="panel">
+    <h2>إضافة حساب</h2>
+    <form id="account-form">
+    <div class="form-grid">
+    <div>
+    <label for="new-name">الاسم الكامل</label>
+    <input id="new-name" name="name" minlength="2" maxlength="100" required>
+    </div>
+    <div>
+    <label for="new-email">البريد الإلكتروني</label>
+    <input id="new-email" name="email" type="email" dir="ltr" maxlength="254" required>
+    </div>
+    <div>
+    <label for="new-role">نوع الحساب</label>
+    <select id="new-role" name="role">${Object.entries(roleNames)
+      .map(([r, label]) => `<option value="${r}">${label}</option>`)
+      .join("")}</select>
+    </div>
+    <div>
+    <label for="staff-password">كلمة المرور الأولية</label>
+    <input id="staff-password" name="password" type="password" autocomplete="new-password" dir="ltr" minlength="12" maxlength="128" required>
+    </div>
+    </div>
+    <div class="form-actions">
+    <button class="button" type="submit">إنشاء الحساب</button>
+    </div>
+    </form>
+    </section>
+    <section class="panel">
+    <h2>آخر الحسابات المحلية</h2>
+    <div class="table-wrap">
+    <table>
+    <thead>
+    <tr>
+    <th>الاسم</th>
+    <th>البريد الإلكتروني</th>
+    <th>الصلاحية</th>
+    </tr>
+    </thead>
+    <tbody>${rows
+      .map(
+        (u) => `<tr>
+    <td>${escapeText(u.name)}</td>
+    <td>
+    <bdi>${escapeText(u.email)}</bdi>
+    </td>
+    <td>${roleNames[u.role]}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    </table>
+    </div>
+    </section>`;
 }

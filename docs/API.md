@@ -1,4 +1,4 @@
-# GymPassJUST API 1.2.1.1
+# GymPassJUST API 1.2.2
 
 Base /api. API routes require private cookie sessions. POST routes require the configured Origin and X-CSRF-Token from /bootstrap. Bodies are limited to16KiB. Roles are member, instructor and manager. Times are integer Unix milliseconds. Errors use {error:{code,message}}; input/business failures422, no session401, role/security403, missing record404, conflict409 and rate limit429.
 

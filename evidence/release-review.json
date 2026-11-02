@@ -1,13 +1,13 @@
 {
-  "date": "2026-11-01",
+  "date": "2026-11-02",
   "reviewer": "Codex local implementation and visual review",
   "independentExternalReview": false,
-  "sourceCommit": "a93ae5c2bc8542a53bd59603bea478c1a8e335c5",
+  "sourceCommit": "bc1bc39aa1e3771bc929cb35b444ee230a242b21",
   "automatedTests": {
     "reported": 30,
     "passed": 30,
-    "statementCoverage": 93.89,
-    "branchCoverage": 86.23
+    "statementCoverage": 93.92,
+    "branchCoverage": 86.32
   },
   "cleanLockedInstall": "npm ci --ignore-scripts --offline completed successfully",
   "capacityAndLatency": [
@@ -17,9 +17,9 @@
       "confirmed": 20,
       "waitlisted": 80,
       "failed": 0,
-      "p95Ms": 366.14,
-      "maxMs": 373.73,
-      "wallMs": 424.99,
+      "p95Ms": 527.36,
+      "maxMs": 534.17,
+      "wallMs": 585.99,
       "passed": true
     },
     {
@@ -28,9 +28,9 @@
       "confirmed": 20,
       "waitlisted": 280,
       "failed": 0,
-      "p95Ms": 689.93,
-      "maxMs": 716.89,
-      "wallMs": 759.12,
+      "p95Ms": 894.84,
+      "maxMs": 926.41,
+      "wallMs": 976.62,
       "passed": true
     }
   ],
@@ -62,9 +62,9 @@
     "Test_Evidence_Report.pdf": 2
   },
   "pdfGeometry": {
-    "pagesChecked": 42,
+    "pagesChecked": 43,
     "outOfBoundsTextPages": 0,
-    "visualReview": "Current PDF bodies, updated diagrams and wireframes rendered and reviewed"
+    "visualReview": "Rendered report bodies, code walkthrough and current QA screenshots reviewed"
   },
   "resolvedDuringReview": [
     "Fair grace after waitlist promotion",
@@ -90,10 +90,11 @@
     "arabicGuide": "docs/شرح_المشروع_للأربعة.md"
   },
   "reportPages": {
+    "Code_Walkthrough": 2,
+    "Discussion_Summary": 2,
+    "Final_Project_Report": 19,
     "Part1_Planning_Report": 19,
-    "Final_Project_Report": 20,
-    "Test_Evidence_Report": 1,
-    "Discussion_Summary": 2
+    "Test_Evidence_Report": 1
   },
   "localAccounts": {
     "initialAccounts": 4,
@@ -124,5 +125,20 @@
     "timetable": "Cancelled: hide 24h after cancellation; completed: hide 24h after end; history retained",
     "qr": "120s from issuance; auto refresh every30s and on tab return",
     "liveData": "No generated students, memberships or classes in normal startup; backup legacy cleanup preserves registered accounts, purchases and custom classes"
-  }
+  },
+  "version": "1.2.2",
+  "readabilityChanges": [
+    "Clear service, class, booking and subscription names",
+    "Named eligibility and occupied-seat functions",
+    "Plain role checks and class-card steps",
+    "Readable multiline HTML with empty QR input preserved",
+    "Shorter English prose; all0–20 report sections and planning tables retained",
+    "START_HERE and Arabic/English code guides"
+  ],
+  "unchanged": [
+    "Database format and saved accounts",
+    "Arabic/English university appearance",
+    "Booking, plan and QR rules",
+    "All30 existing test assertions and coverage threshold"
+  ]
 }

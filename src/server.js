@@ -74,7 +74,7 @@ export async function createApp(options = {}) {
       secret,
     );
   }
-  const s = createService(db, { clock, secret }),
+  const service = createService(db, { clock, secret }),
     app = express();
   app.disable("x-powered-by");
   app.use((req, res, next) => {
@@ -118,7 +118,7 @@ export async function createApp(options = {}) {
     express.urlencoded({ extended: false, limit: "16kb" }),
   );
   app.get("/health", (req, res) =>
-    res.json({ status: "ok", version: "1.2.1" }),
+    res.json({ status: "ok", version: "1.2.2" }),
   );
   app.get("/vendor/jsqr.js", (req, res) =>
     res.sendFile(
@@ -128,18 +128,20 @@ export async function createApp(options = {}) {
     ),
   );
   await installAuth(app, db, { origin, demo, clock });
-  const allow =
-    (...roles) =>
-    (req, res, next) =>
-      roles.includes(req.user.role)
-        ? next()
-        : next(
-            new AppError(
-              "FORBIDDEN",
-              "This action is not available for your role",
-              403,
-            ),
-          );
+  function allow(...roles) {
+    return function checkRole(req, res, next) {
+      if (!roles.includes(req.user.role)) {
+        return next(
+          new AppError(
+            "FORBIDDEN",
+            "This action is not available for your role",
+            403,
+          ),
+        );
+      }
+      next();
+    };
+  }
   const id = (value) => {
     const n = Number(value);
     fail(
@@ -170,30 +172,30 @@ export async function createApp(options = {}) {
       now: clock(),
       timeZone: "Asia/Amman",
       demo,
-      membership: s.membership(req.user.id) || null,
-      unread: s.one(
+      membership: service.membership(req.user.id) || null,
+      unread: service.one(
         "SELECT COUNT(*) n FROM notifications WHERE user_id=? AND read_at IS NULL",
         req.user.id,
       ).n,
       instructors:
         req.user.role === "manager"
-          ? s.all("SELECT id,name FROM users WHERE role='instructor'")
+          ? service.all("SELECT id,name FROM users WHERE role='instructor'")
           : [],
     }),
   );
   app.get("/api/plans", (req, res) =>
     res.json(
-      s
+      service
         .all("SELECT * FROM plans ORDER BY price")
         .map((p) => ({ ...p, types: JSON.parse(p.types) })),
     ),
   );
   app.post("/api/plans", allow("manager"), (req, res) =>
-    res.status(201).json(s.savePlan(req.user.id, req.body)),
+    res.status(201).json(service.savePlan(req.user.id, req.body)),
   );
   app.get("/api/memberships", (req, res) =>
     res.json(
-      s.all(
+      service.all(
         "SELECT m.*,p.name,p.price FROM memberships m JOIN plans p ON p.id=m.plan_id WHERE user_id=? ORDER BY ends DESC",
         req.user.id,
       ),
@@ -212,7 +214,7 @@ export async function createApp(options = {}) {
     res
       .status(201)
       .json(
-        s.buy(
+        service.buy(
           req.user.id,
           userId,
           id(req.body.planId),
@@ -235,11 +237,11 @@ export async function createApp(options = {}) {
       params.push(req.user.id);
     }
     const where = filters.join(" AND "),
-      total = s.one(
+      total = service.one(
         `SELECT COUNT(*) n FROM classes c WHERE ${where}`,
         ...params,
       ).n;
-    const rows = s.all(
+    const rows = service.all(
       `SELECT c.*,u.name instructor,
       (SELECT COUNT(*) FROM bookings b WHERE b.class_id=c.id AND b.state IN ('confirmed','checked_in','attended')) booked,
       (SELECT COUNT(*) FROM bookings b WHERE b.class_id=c.id AND b.state='waitlisted') waiting,
@@ -256,15 +258,15 @@ export async function createApp(options = {}) {
       ...req.body,
       ...(req.user.role === "instructor" ? { instructorId: req.user.id } : {}),
     };
-    res.status(201).json(s.saveClass(req.user.id, data));
+    res.status(201).json(service.saveClass(req.user.id, data));
   });
   app.post(
     "/api/classes/:id/cancellation",
     allow("manager", "instructor"),
-    (req, res) => res.json(s.cancelClass(req.user, id(req.params.id))),
+    (req, res) => res.json(service.cancelClass(req.user, id(req.params.id))),
   );
   app.get("/api/classes/:id", allow("manager", "instructor"), (req, res) => {
-    const c = s.getClass(id(req.params.id));
+    const c = service.getClass(id(req.params.id));
     fail(
       req.user.role === "instructor" && c.instructor_id !== req.user.id,
       "FORBIDDEN",
@@ -277,7 +279,7 @@ export async function createApp(options = {}) {
     "/api/classes/:id/roster",
     allow("manager", "instructor"),
     (req, res) => {
-      const c = s.getClass(id(req.params.id));
+      const c = service.getClass(id(req.params.id));
       fail(
         req.user.role === "instructor" && c.instructor_id !== req.user.id,
         "FORBIDDEN",
@@ -285,7 +287,7 @@ export async function createApp(options = {}) {
         403,
       );
       res.json(
-        s.all(
+        service.all(
           "SELECT b.*,u.name,u.email FROM bookings b JOIN users u ON u.id=b.user_id WHERE b.class_id=? ORDER BY b.created,b.id",
           c.id,
         ),
@@ -293,11 +295,11 @@ export async function createApp(options = {}) {
     },
   );
   app.post("/api/bookings", allow("member"), (req, res) =>
-    res.status(201).json(s.book(req.user.id, id(req.body.classId))),
+    res.status(201).json(service.book(req.user.id, id(req.body.classId))),
   );
   app.get("/api/bookings", (req, res) =>
     res.json(
-      s.all(
+      service.all(
         `SELECT b.*,c.title,c.type,c.starts,c.ends,c.studio,u.name instructor,
     CASE WHEN b.state='waitlisted' THEN (SELECT COUNT(*) FROM bookings w WHERE w.class_id=b.class_id AND w.state='waitlisted' AND (w.created<b.created OR (w.created=b.created AND w.id<=b.id))) END position
     FROM bookings b JOIN classes c ON c.id=b.class_id JOIN users u ON u.id=c.instructor_id WHERE b.user_id=? ORDER BY c.starts DESC`,
@@ -306,26 +308,28 @@ export async function createApp(options = {}) {
     ),
   );
   app.post("/api/bookings/:id/cancellation", allow("member"), (req, res) =>
-    res.json(s.cancel(req.user.id, id(req.params.id))),
+    res.json(service.cancel(req.user.id, id(req.params.id))),
   );
   app.get("/api/membership-pass", allow("member"), async (req, res) => {
-    const token = s.makeToken("membership", req.user.id);
+    const token = service.makeToken("membership", req.user.id);
     res.json({
       token,
-      expiresAt: s.verifyToken(token, "membership").exp,
+      expiresAt: service.verifyToken(token, "membership").exp,
       refreshAfterMs: 30000,
       image: await QRCode.toDataURL(token, { width: 300, margin: 2 }),
     });
   });
   app.post("/api/class-qr-check-ins", allow("instructor"), (req, res) =>
-    res.json(s.scanAttendance(req.user, id(req.body.classId), req.body.token)),
+    res.json(
+      service.scanAttendance(req.user, id(req.body.classId), req.body.token),
+    ),
   );
   app.get("/api/members", allow("manager"), (req, res) => {
     const term = String(req.query.q || "").slice(0, 100),
       p = page(req),
       pattern = `%${term}%`;
     const where = "role='member' AND (name LIKE ? OR email LIKE ? OR id=?)";
-    const total = s.one(
+    const total = service.one(
       `SELECT COUNT(*) n FROM users WHERE ${where}`,
       pattern,
       pattern,
@@ -333,7 +337,7 @@ export async function createApp(options = {}) {
     ).n;
     res.json(
       pageResult(
-        s
+        service
           .all(
             `SELECT * FROM users WHERE ${where} ORDER BY name LIMIT 50 OFFSET ?`,
             pattern,
@@ -343,7 +347,7 @@ export async function createApp(options = {}) {
           )
           .map((u) => ({
             ...u,
-            membership: s.membership(u.id) || null,
+            membership: service.membership(u.id) || null,
           })),
         total,
         p,
@@ -354,12 +358,12 @@ export async function createApp(options = {}) {
     const p = page(req);
     res.json(
       pageResult(
-        s.all(
+        service.all(
           "SELECT * FROM notifications WHERE user_id=? ORDER BY created DESC,id DESC LIMIT 50 OFFSET ?",
           req.user.id,
           (p - 1) * 50,
         ),
-        s.one(
+        service.one(
           "SELECT COUNT(*) n FROM notifications WHERE user_id=?",
           req.user.id,
         ).n,
@@ -368,7 +372,7 @@ export async function createApp(options = {}) {
     );
   });
   app.post("/api/notifications/read", (req, res) => {
-    s.run(
+    service.run(
       "UPDATE notifications SET read_at=? WHERE user_id=? AND read_at IS NULL",
       clock(),
       req.user.id,
@@ -376,17 +380,17 @@ export async function createApp(options = {}) {
     res.json({ ok: true });
   });
   app.get("/api/dashboard", allow("manager"), (req, res) =>
-    res.json(s.dashboard()),
+    res.json(service.dashboard()),
   );
   app.get("/api/audit", allow("manager"), (req, res) => {
     const p = page(req);
     res.json(
       pageResult(
-        s.all(
+        service.all(
           "SELECT * FROM audit ORDER BY id DESC LIMIT 50 OFFSET ?",
           (p - 1) * 50,
         ),
-        s.one("SELECT COUNT(*) n FROM audit").n,
+        service.one("SELECT COUNT(*) n FROM audit").n,
         p,
       ),
     );
@@ -464,7 +468,7 @@ export async function createApp(options = {}) {
   if (options.jobs !== false) {
     minuteTimer = setInterval(() => {
       try {
-        s.tick();
+        service.tick();
       } catch (error) {
         console.error(
           JSON.stringify({
@@ -484,7 +488,7 @@ export async function createApp(options = {}) {
   return {
     app,
     db,
-    service: s,
+    service: service,
     demo,
     origin,
     dispose() {

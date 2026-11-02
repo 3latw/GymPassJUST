@@ -1,9 +1,4 @@
-import {
-  createHmac,
-  createHash,
-  randomUUID,
-  timingSafeEqual,
-} from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { transaction } from "./db.js";
 
 export class AppError extends Error {
@@ -46,9 +41,9 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       key,
     );
   const getClass = (id) => {
-    const c = one("SELECT * FROM classes WHERE id=?", id);
-    fail(!c, "NOT_FOUND", "Class not found", 404);
-    return c;
+    const gymClass = one("SELECT * FROM classes WHERE id=?", id);
+    fail(!gymClass, "NOT_FOUND", "Class not found", 404);
+    return gymClass;
   };
   function membership(id, at = clock(), type = null, through = at) {
     return all(
@@ -57,73 +52,83 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       id,
       at,
       through,
-    ).find((m) => !type || JSON.parse(m.types).includes(type));
-  }
-  const eligible = (id, c) =>
-    Boolean(
-      membership(id, clock(), c.type, c.ends) &&
-        !one(
-          `SELECT b.id FROM bookings b JOIN classes x ON x.id=b.class_id WHERE b.user_id=? AND b.class_id<>? AND b.state IN ('confirmed','checked_in') AND x.starts<? AND x.ends>?`,
-          id,
-          c.id,
-          c.ends,
-          c.starts,
-        ),
+    ).find(
+      (subscription) => !type || JSON.parse(subscription.types).includes(type),
     );
+  }
+  function eligible(userId, gymClass) {
+    const activePlan = membership(
+      userId,
+      clock(),
+      gymClass.type,
+      gymClass.ends,
+    );
+    if (!activePlan) return false;
+    const overlappingBooking = one(
+      `SELECT b.id FROM bookings b JOIN classes x ON x.id=b.class_id WHERE b.user_id=? AND b.class_id<>? AND b.state IN ('confirmed','checked_in') AND x.starts<? AND x.ends>?`,
+      userId,
+      gymClass.id,
+      gymClass.ends,
+      gymClass.starts,
+    );
+    return !overlappingBooking;
+  }
+
+  function bookedSeats(classId) {
+    return one(
+      "SELECT COUNT(*) n FROM bookings WHERE class_id=? AND state IN ('confirmed','checked_in','attended')",
+      classId,
+    ).n;
+  }
   function promote(classId) {
-    const c = getClass(classId);
-    if (c.state !== "published" || clock() >= c.ends) return;
-    let free =
-      c.capacity -
-      one(
-        "SELECT COUNT(*) n FROM bookings WHERE class_id=? AND state IN ('confirmed','checked_in','attended')",
-        classId,
-      ).n;
-    for (const b of all(
+    const gymClass = getClass(classId);
+    if (gymClass.state !== "published" || clock() >= gymClass.ends) return;
+    let free = gymClass.capacity - bookedSeats(classId);
+    for (const booking of all(
       "SELECT * FROM bookings WHERE class_id=? AND state='waitlisted' ORDER BY created,id",
       classId,
     )) {
       if (free <= 0) break;
-      if (!eligible(b.user_id, c)) {
-        run("UPDATE bookings SET state='not_promoted' WHERE id=?", b.id);
+      if (!eligible(booking.user_id, gymClass)) {
+        run("UPDATE bookings SET state='not_promoted' WHERE id=?", booking.id);
         notify(
-          b.user_id,
+          booking.user_id,
           "waitlist",
           "تعذرت ترقية حجزك بسبب حالة العضوية أو تعارض الموعد.",
-          `skip-${b.id}`,
+          `skip-${booking.id}`,
         );
         continue;
       }
       run(
         "UPDATE bookings SET state='confirmed',confirmed_at=? WHERE id=?",
         clock(),
-        b.id,
+        booking.id,
       );
       free--;
       notify(
-        b.user_id,
+        booking.user_id,
         "promotion",
-        `أصبح حجزك مؤكداً في ${c.title}.`,
-        `promote-${b.id}`,
+        `أصبح حجزك مؤكداً في ${gymClass.title}.`,
+        `promote-${booking.id}`,
       );
     }
   }
   function book(userId, classId) {
     return atomic(() => {
-      const c = getClass(classId),
+      const gymClass = getClass(classId),
         now = clock();
       fail(
-        c.state !== "published" || now >= c.starts,
+        gymClass.state !== "published" || now >= gymClass.starts,
         "CLASS_CLOSED",
         "Class is no longer open for booking",
       );
       fail(
-        now < c.starts - 48 * HOUR,
+        now < gymClass.starts - 48 * HOUR,
         "BOOKING_WINDOW",
         "Booking opens 48 hours before class",
       );
       fail(
-        !membership(userId, now, c.type, c.ends),
+        !membership(userId, now, gymClass.type, gymClass.ends),
         "MEMBERSHIP_REQUIRED",
         "An active membership covering this class is required",
       );
@@ -142,18 +147,15 @@ export function createService(db, { clock = Date.now, secret } = {}) {
           `SELECT b.id FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.user_id=?
       AND b.state IN ('confirmed','checked_in') AND c.starts<? AND c.ends>?`,
           userId,
-          c.ends,
-          c.starts,
+          gymClass.ends,
+          gymClass.starts,
         ),
         "OVERLAP",
         "You already have a booking at this time",
         409,
       );
-      const count = one(
-        "SELECT COUNT(*) n FROM bookings WHERE class_id=? AND state IN ('confirmed','checked_in','attended')",
-        classId,
-      ).n;
-      const state = count < c.capacity ? "confirmed" : "waitlisted";
+      const count = bookedSeats(classId);
+      const state = count < gymClass.capacity ? "confirmed" : "waitlisted";
       const result = run(
         "INSERT INTO bookings(user_id,class_id,state,created,confirmed_at) VALUES (?,?,?,?,?)",
         userId,
@@ -167,8 +169,8 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         userId,
         state,
         state === "confirmed"
-          ? `تم تأكيد حجز ${c.title}.`
-          : `أُضيف اسمك لقائمة انتظار ${c.title}.`,
+          ? `تم تأكيد حجز ${gymClass.title}.`
+          : `أُضيف اسمك لقائمة انتظار ${gymClass.title}.`,
         `booking-${id}`,
       );
       return { id, state };
@@ -176,20 +178,20 @@ export function createService(db, { clock = Date.now, secret } = {}) {
   }
   function cancel(userId, bookingId) {
     return atomic(() => {
-      const b = one(
+      const booking = one(
         "SELECT * FROM bookings WHERE id=? AND user_id=?",
         bookingId,
         userId,
       );
-      fail(!b, "NOT_FOUND", "Booking not found", 404);
+      fail(!booking, "NOT_FOUND", "Booking not found", 404);
       fail(
-        !["confirmed", "waitlisted"].includes(b.state),
+        !["confirmed", "waitlisted"].includes(booking.state),
         "INVALID_STATE",
         "This booking cannot be cancelled",
       );
-      const c = getClass(b.class_id);
+      const gymClass = getClass(booking.class_id);
       fail(
-        clock() > c.starts - 2 * HOUR,
+        clock() > gymClass.starts - 2 * HOUR,
         "CANCELLATION_CUTOFF",
         "Cancel at least 2 hours before class",
       );
@@ -197,17 +199,17 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       notify(
         userId,
         "cancelled",
-        `تم إلغاء حجز ${c.title}.`,
+        `تم إلغاء حجز ${gymClass.title}.`,
         `cancel-${bookingId}`,
       );
-      promote(c.id);
+      promote(gymClass.id);
       return { ok: true };
     });
   }
   function buy(actorId, userId, planId, reference) {
     return atomic(() => {
-      const p = one("SELECT * FROM plans WHERE id=?", planId);
-      fail(!p, "NOT_FOUND", "Membership plan not found", 404);
+      const plan = one("SELECT * FROM plans WHERE id=?", planId);
+      fail(!plan, "NOT_FOUND", "Membership plan not found", 404);
       const existing = one(
         `SELECT m.* FROM payments p JOIN memberships m ON m.id=p.membership_id WHERE reference=?`,
         reference,
@@ -239,7 +241,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         409,
       );
       const starts = clock(),
-        ends = starts + p.days * DAY;
+        ends = starts + plan.days * DAY;
       const result = run(
         "INSERT INTO memberships(user_id,plan_id,starts,ends,created) VALUES (?,?,?,?,?)",
         userId,
@@ -252,7 +254,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       run(
         "INSERT INTO payments(membership_id,amount,reference,created) VALUES (?,?,?,?)",
         id,
-        p.price,
+        plan.price,
         reference,
         clock(),
       );
@@ -260,7 +262,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         actorId,
         "membership.purchase",
         id,
-        `simulated; plan=${planId}; cents=${p.price}`,
+        `simulated; plan=${planId}; cents=${plan.price}`,
       );
       notify(
         userId,
@@ -273,17 +275,17 @@ export function createService(db, { clock = Date.now, secret } = {}) {
   }
   function cancelClass(actor, classId) {
     return atomic(() => {
-      const c = getClass(classId);
+      const gymClass = getClass(classId);
       fail(
         actor.role !== "manager" &&
-          !(actor.role === "instructor" && c.instructor_id === actor.id),
+          !(actor.role === "instructor" && gymClass.instructor_id === actor.id),
         "FORBIDDEN",
         "Only the assigned instructor can cancel this class",
         403,
       );
-      if (c.state === "cancelled") return { ok: true };
+      if (gymClass.state === "cancelled") return { ok: true };
       fail(
-        clock() >= c.ends,
+        clock() >= gymClass.ends,
         "CLASS_ENDED",
         "A completed class cannot be cancelled",
       );
@@ -292,16 +294,16 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         clock(),
         classId,
       );
-      for (const b of all(
+      for (const booking of all(
         "SELECT * FROM bookings WHERE class_id=? AND state IN ('confirmed','waitlisted')",
         classId,
       )) {
-        run("UPDATE bookings SET state='cancelled' WHERE id=?", b.id);
+        run("UPDATE bookings SET state='cancelled' WHERE id=?", booking.id);
         notify(
-          b.user_id,
+          booking.user_id,
           "class_cancelled",
-          `تم إلغاء حصة ${c.title}.`,
-          `class-cancel-${b.id}`,
+          `تم إلغاء حصة ${gymClass.title}.`,
+          `class-cancel-${booking.id}`,
         );
       }
       audit(actor.id, "class.cancel", classId);
@@ -315,48 +317,48 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         "UPDATE bookings SET state='attended' WHERE state='checked_in' AND class_id IN (SELECT id FROM classes WHERE ends<=?)",
         now,
       );
-      for (const b of all(
+      for (const booking of all(
         "SELECT b.id,b.user_id,c.title,c.ends FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.state='confirmed' AND c.state='published' AND c.ends<=?",
         now,
       )) {
         run(
           "UPDATE bookings SET state='no_show',no_show_at=? WHERE id=?",
-          b.ends,
-          b.id,
+          booking.ends,
+          booking.id,
         );
         notify(
-          b.user_id,
+          booking.user_id,
           "no_show",
-          `تم تسجيل غيابك عن ${b.title}.`,
-          `no-show-${b.id}`,
+          `تم تسجيل غيابك عن ${booking.title}.`,
+          `no-show-${booking.id}`,
         );
       }
       run(
         "UPDATE bookings SET state='not_promoted' WHERE state='waitlisted' AND class_id IN (SELECT id FROM classes WHERE ends<=? OR state='cancelled')",
         now,
       );
-      for (const b of all(
+      for (const booking of all(
         `SELECT b.id,b.user_id,c.title FROM bookings b JOIN classes c ON c.id=b.class_id
       WHERE b.state='confirmed' AND c.starts>? AND c.starts<=?`,
         now,
         now + 2 * HOUR,
       ))
         notify(
-          b.user_id,
+          booking.user_id,
           "reminder",
-          `تذكير بموعد ${b.title} خلال ساعتين.`,
-          `reminder-${b.id}`,
+          `تذكير بموعد ${booking.title} خلال ساعتين.`,
+          `reminder-${booking.id}`,
         );
-      for (const m of all(
+      for (const subscription of all(
         "SELECT id,user_id FROM memberships WHERE ends>? AND ends<=?",
         now,
         now + 3 * DAY,
       ))
         notify(
-          m.user_id,
+          subscription.user_id,
           "expiry",
           "اشتراكك ينتهي خلال ثلاثة أيام. يمكنك تجديده من صفحة العضوية.",
-          `expiry-${m.id}`,
+          `expiry-${subscription.id}`,
         );
       run("DELETE FROM used_tokens WHERE expires<=?", now);
       run("DELETE FROM sessions WHERE expires<=?", now);
@@ -406,77 +408,79 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       "Invalid QR signature",
       403,
     );
-    let p;
+    let payload;
     try {
-      p = JSON.parse(Buffer.from(data, "base64url").toString());
+      payload = JSON.parse(Buffer.from(data, "base64url").toString());
     } catch {
       throw new AppError("INVALID_TOKEN", "Invalid QR payload", 403);
     }
     fail(
-      p.kind !== kind || typeof p.sub !== "string",
+      payload.kind !== kind || typeof payload.sub !== "string",
       "INVALID_TOKEN",
       "Invalid QR purpose",
       403,
     );
     fail(
-      !Number.isFinite(p.exp) ||
-        p.exp <= clock() ||
-        p.iat > clock() ||
-        !Number.isFinite(p.iat) ||
-        ![MINUTE, 2 * MINUTE].includes(p.exp - p.iat),
+      !Number.isFinite(payload.exp) ||
+        payload.exp <= clock() ||
+        payload.iat > clock() ||
+        !Number.isFinite(payload.iat) ||
+        ![MINUTE, 2 * MINUTE].includes(payload.exp - payload.iat),
       "EXPIRED_TOKEN",
       "QR token expired",
       403,
     );
-    return p;
+    return payload;
   }
   function scanAttendance(actor, classId, token) {
     return atomic(() => {
-      const c = getClass(classId);
+      const gymClass = getClass(classId);
       fail(
-        actor.role !== "instructor" || c.instructor_id !== actor.id,
+        actor.role !== "instructor" || gymClass.instructor_id !== actor.id,
         "FORBIDDEN",
         "Only the assigned instructor can scan this class",
         403,
       );
       fail(
-        c.state !== "published" || clock() < c.starts || clock() >= c.ends,
+        gymClass.state !== "published" ||
+          clock() < gymClass.starts ||
+          clock() >= gymClass.ends,
         "CHECKIN_WINDOW",
         "QR scanning is available from class start until class end",
         422,
       );
-      const p = verifyToken(token, "membership"),
+      const payload = verifyToken(token, "membership"),
         user = one(
           "SELECT id,name,email FROM users WHERE id=? AND role='member'",
-          p.sub,
+          payload.sub,
         );
       fail(!user, "NOT_FOUND", "Student account not found", 404);
-      const active = membership(user.id, clock(), c.type, c.ends);
+      const active = membership(user.id, clock(), gymClass.type, gymClass.ends);
       fail(
         !active,
         "MEMBERSHIP_REQUIRED",
         "Student needs an active membership covering this class",
         422,
       );
-      const b = one(
+      const booking = one(
         "SELECT * FROM bookings WHERE user_id=? AND class_id=? AND state IN ('confirmed','checked_in') ORDER BY id DESC LIMIT 1",
         user.id,
-        c.id,
+        gymClass.id,
       );
-      fail(!b, "NOT_BOOKED", "Student is not booked in this class", 422);
-      const alreadyCheckedIn = b.state === "checked_in";
+      fail(!booking, "NOT_BOOKED", "Student is not booked in this class", 422);
+      const alreadyCheckedIn = booking.state === "checked_in";
       if (!alreadyCheckedIn) {
         run(
           "UPDATE bookings SET state='checked_in',checked_at=? WHERE id=?",
           clock(),
-          b.id,
+          booking.id,
         );
-        audit(actor.id, "attendance.qr", b.id, `class=${c.id}`);
+        audit(actor.id, "attendance.qr", booking.id, `class=${gymClass.id}`);
         notify(
           user.id,
           "attendance",
-          `تم تسجيل حضورك في ${c.title}.`,
-          `check-in-${b.id}`,
+          `تم تسجيل حضورك في ${gymClass.title}.`,
+          `check-in-${booking.id}`,
         );
       }
       return {
@@ -485,35 +489,35 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         alreadyCheckedIn,
         member: user,
         membership: { name: active.name, ends: active.ends },
-        class: { id: c.id, title: c.title },
+        class: { id: gymClass.id, title: gymClass.title },
         message: alreadyCheckedIn
           ? "تم تسجيل حضور هذا الطالب مسبقاً"
           : "اشتراك فعّال وحجز مؤكد — تم تسجيل الحضور",
       };
     });
   }
-  function savePlan(actorId, p) {
+  function savePlan(actorId, plan) {
     fail(
-      typeof p.name !== "string" ||
-        p.name.trim().length < 2 ||
-        p.name.length > 100,
+      typeof plan.name !== "string" ||
+        plan.name.trim().length < 2 ||
+        plan.name.length > 100,
       "INVALID_PLAN",
       "Plan name must be 2 to 100 characters",
     );
     fail(
-      !Number.isSafeInteger(p.price) ||
-        p.price < 0 ||
-        p.price > 10000000 ||
-        !Number.isSafeInteger(p.days) ||
-        p.days < 1 ||
-        p.days > 366,
+      !Number.isSafeInteger(plan.price) ||
+        plan.price < 0 ||
+        plan.price > 10000000 ||
+        !Number.isSafeInteger(plan.days) ||
+        plan.days < 1 ||
+        plan.days > 366,
       "INVALID_PLAN",
       "Invalid plan price or duration",
     );
     fail(
-      !Array.isArray(p.types) ||
-        !p.types.length ||
-        p.types.some(
+      !Array.isArray(plan.types) ||
+        !plan.types.length ||
+        plan.types.some(
           (t) => !["strength", "yoga", "spinning", "fitness"].includes(t),
         ),
       "INVALID_PLAN",
@@ -523,50 +527,52 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       const id = Number(
         run(
           "INSERT INTO plans(name,price,days,types) VALUES (?,?,?,?)",
-          p.name.trim(),
-          p.price,
-          p.days,
-          JSON.stringify(p.types),
+          plan.name.trim(),
+          plan.price,
+          plan.days,
+          JSON.stringify(plan.types),
         ).lastInsertRowid,
       );
       audit(actorId, "plan.create", id);
       return { id };
     });
   }
-  function saveClass(actorId, c) {
+  function saveClass(actorId, gymClass) {
     fail(
-      !["strength", "yoga", "spinning", "fitness"].includes(c.type),
+      !["strength", "yoga", "spinning", "fitness"].includes(gymClass.type),
       "INVALID_CLASS",
       "Invalid class type",
     );
     fail(
-      typeof c.title !== "string" ||
-        c.title.trim().length < 2 ||
-        c.title.length > 100 ||
-        typeof c.studio !== "string" ||
-        c.studio.length < 1 ||
-        c.studio.length > 100,
+      typeof gymClass.title !== "string" ||
+        gymClass.title.trim().length < 2 ||
+        gymClass.title.length > 100 ||
+        typeof gymClass.studio !== "string" ||
+        gymClass.studio.length < 1 ||
+        gymClass.studio.length > 100,
       "INVALID_CLASS",
       "Invalid title or studio",
     );
     fail(
-      !Number.isSafeInteger(c.starts) ||
-        !Number.isSafeInteger(c.ends) ||
-        c.starts <= clock() ||
-        c.ends <= c.starts ||
-        c.ends - c.starts > 4 * HOUR,
+      !Number.isSafeInteger(gymClass.starts) ||
+        !Number.isSafeInteger(gymClass.ends) ||
+        gymClass.starts <= clock() ||
+        gymClass.ends <= gymClass.starts ||
+        gymClass.ends - gymClass.starts > 4 * HOUR,
       "INVALID_CLASS",
       "Class must be in the future and last at most four hours",
     );
     fail(
-      !Number.isSafeInteger(c.capacity) || c.capacity < 1 || c.capacity > 500,
+      !Number.isSafeInteger(gymClass.capacity) ||
+        gymClass.capacity < 1 ||
+        gymClass.capacity > 500,
       "INVALID_CLASS",
       "Capacity must be 1 to 500",
     );
     fail(
       !one(
         "SELECT id FROM users WHERE id=? AND role='instructor'",
-        c.instructorId,
+        gymClass.instructorId,
       ),
       "INVALID_CLASS",
       "Instructor not found",
@@ -574,10 +580,10 @@ export function createService(db, { clock = Date.now, secret } = {}) {
     fail(
       one(
         "SELECT id FROM classes WHERE state='published' AND starts<? AND ends>? AND (studio=? OR instructor_id=?)",
-        c.ends,
-        c.starts,
-        c.studio,
-        c.instructorId,
+        gymClass.ends,
+        gymClass.starts,
+        gymClass.studio,
+        gymClass.instructorId,
       ),
       "OVERLAP",
       "Studio or instructor already assigned at this time",
@@ -587,13 +593,13 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       const id = Number(
         run(
           "INSERT INTO classes(type,title,instructor_id,studio,starts,ends,capacity) VALUES (?,?,?,?,?,?,?)",
-          c.type,
-          c.title.trim(),
-          c.instructorId,
-          c.studio.trim(),
-          c.starts,
-          c.ends,
-          c.capacity,
+          gymClass.type,
+          gymClass.title.trim(),
+          gymClass.instructorId,
+          gymClass.studio.trim(),
+          gymClass.starts,
+          gymClass.ends,
+          gymClass.capacity,
         ).lastInsertRowid,
       );
       audit(actorId, "class.publish", id);

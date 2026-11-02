@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-01T18:09:41.527Z",
+  "date": "2026-11-02T13:04:52.920Z",
   "freshArchive": true,
   "loginAccounts": 4,
   "roles": [
@@ -10,12 +10,11 @@
   ],
   "sqliteIntegrity": "ok",
   "restartRetainedPasswordHashes": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "freshCounts": {
     "users": 4,
     "memberships": 0,
     "classes": 0,
     "plans": 3
-  },
-  "cleanDefaultDataVerified": true
+  }
 }

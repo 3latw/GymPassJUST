@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-02",
+  "version": "1.2.2",
+  "database": "Isolated in-memory QA fixture; no live member data",
+  "browser": "Codex in-app Chromium",
+  "viewport": 1280,
+  "pageWidth": 1265,
+  "consoleWarningsOrErrors": [],
+  "verified": [
+    "Local student and instructor login",
+    "Student books a future class; card changes to Confirmed",
+    "Arabic/English page text and navigation",
+    "QR input starts empty after formatting",
+    "Student pass shown; instructor accepts code and records attendance",
+    "Instructor sees roster, cancels booked class and receives confirmation"
+  ],
+  "cameraHardwareTested": false
+}

@@ -1,6 +1,7 @@
 import { installLanguageSwitcher } from "/i18n.js";
 import {
   icon,
+  escapeText as escape,
   loginMarkup,
   shellMarkup,
   portalMarkup,
@@ -12,14 +13,6 @@ installLanguageSwitcher();
 const root = document.querySelector("#root"),
   modal = document.querySelector("#modal"),
   modalBody = document.querySelector("#modal-body");
-const escape = (value) =>
-  String(value ?? "").replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
 const roleNames = {
   member: "طالب",
   instructor: "مدرب الحصص",
@@ -221,31 +214,95 @@ window.addEventListener("popstate", () => {
 });
 
 const heading = (title, subtitle, extra = "") =>
-  `<header class="page-heading"><div><h1>${title}</h1><p>${subtitle}</p></div>${extra}</header>`;
+  `<header class="page-heading">
+    <div>
+    <h1>${title}</h1>
+    <p>${subtitle}</p>
+    </div>${extra}</header>`;
 const empty = (title, text) =>
-  `<div class="empty"><h2>${title}</h2><p>${text}</p></div>`;
+  `<div class="empty">
+    <h2>${title}</h2>
+    <p>${text}</p>
+    </div>`;
 const stat = (label, value, note) =>
-  `<div class="stat"><small>${label}</small><strong>${escape(value)}</strong><small>${note}</small></div>`;
-function classCard(c) {
-  const open =
-    now() >= c.starts - 48 * 3600000 &&
-    now() < c.starts &&
-    c.state === "published";
-  let action;
-  if (session.user.role === "member")
-    action = ["confirmed", "waitlisted", "checked_in"].includes(c.myState)
-      ? badge(c.myState)
-      : button(
-          c.booked >= c.capacity ? "انضم للانتظار" : "احجز مكانك",
-          "book",
-          c.id,
-          open ? "small" : "small secondary",
-        );
-  else if (["manager", "instructor"].includes(session.user.role))
-    action = button("المسجلون والتفاصيل", "roster", c.id, "small secondary");
-  else action = "";
-  if (session.user.role === "member" && !open && !c.myState) action = "";
-  return `<article class="class-card"><div class="class-art ${escape(c.type)}" aria-hidden="true"><span class="art-label">${{ strength: "POWER", yoga: "FLOW", spinning: "RIDE", fitness: "MOVE" }[c.type]}</span></div><div class="class-info"><small>${date(c.starts, { weekday: "long" })} · ${time(c.starts)}</small><h3>${escape(c.title)}</h3><div class="class-meta"><span>${escape(c.instructor)}</span><span>${escape(c.studio)}</span><span>${Math.round((c.ends - c.starts) / 60000)} دقيقة</span></div>${c.state === "cancelled" ? '<span class="badge error">الحصة ملغاة</span>' : !open && session.user.role === "member" ? `<small>${now() < c.starts ? "يفتح الحجز " + date(c.starts - 48 * 3600000) + " " + time(c.starts - 48 * 3600000) : "بدأت الحصة"}</small>` : ""}<div class="class-bottom"><small>${c.booked} / ${c.capacity} مقعد${c.waiting ? " · انتظار " + c.waiting : ""}</small>${c.state === "cancelled" ? "" : action}</div></div></article>`;
+  `<div class="stat">
+    <small>${label}</small>
+    <strong>${escape(value)}</strong>
+    <small>${note}</small>
+    </div>`;
+function classCard(gymClass) {
+  const isStudent = session.user.role === "member";
+  const bookingOpen =
+    gymClass.state === "published" &&
+    now() >= gymClass.starts - 48 * 3600000 &&
+    now() < gymClass.starts;
+  const alreadyBooked = ["confirmed", "waitlisted", "checked_in"].includes(
+    gymClass.myState,
+  );
+  let action = "";
+
+  if (isStudent) {
+    if (alreadyBooked) {
+      action = badge(gymClass.myState);
+    } else if (bookingOpen || gymClass.myState) {
+      const label =
+        gymClass.booked >= gymClass.capacity ? "انضم للانتظار" : "احجز مكانك";
+      action = button(
+        label,
+        "book",
+        gymClass.id,
+        bookingOpen ? "small" : "small secondary",
+      );
+    }
+  } else if (["manager", "instructor"].includes(session.user.role)) {
+    action = button(
+      "المسجلون والتفاصيل",
+      "roster",
+      gymClass.id,
+      "small secondary",
+    );
+  }
+
+  let status = "";
+  if (gymClass.state === "cancelled") {
+    status = '<span class="badge error">الحصة ملغاة</span>';
+    action = "";
+  } else if (!bookingOpen && isStudent) {
+    let message = "بدأت الحصة";
+    if (now() < gymClass.starts) {
+      const opensAt = gymClass.starts - 48 * 3600000;
+      message = "يفتح الحجز " + date(opensAt) + " " + time(opensAt);
+    }
+    status = "<small>" + message + "</small>";
+  }
+
+  const artLabels = {
+    strength: "POWER",
+    yoga: "FLOW",
+    spinning: "RIDE",
+    fitness: "MOVE",
+  };
+  const duration = Math.round((gymClass.ends - gymClass.starts) / 60000);
+  const waiting = gymClass.waiting ? " · انتظار " + gymClass.waiting : "";
+  return `<article class="class-card">
+    <div class="class-art ${escape(gymClass.type)}" aria-hidden="true">
+      <span class="art-label">${artLabels[gymClass.type]}</span>
+    </div>
+    <div class="class-info">
+      <small>${date(gymClass.starts, { weekday: "long" })} · ${time(gymClass.starts)}</small>
+      <h3>${escape(gymClass.title)}</h3>
+      <div class="class-meta">
+        <span>${escape(gymClass.instructor)}</span>
+        <span>${escape(gymClass.studio)}</span>
+        <span>${duration} دقيقة</span>
+      </div>
+      ${status}
+      <div class="class-bottom">
+        <small>${gymClass.booked} / ${gymClass.capacity} مقعد${waiting}</small>
+        ${action}
+      </div>
+    </div>
+  </article>`;
 }
 function pager(p, target) {
   if (p.totalPages <= 1) return "";
@@ -279,16 +336,24 @@ async function classesView() {
         ? '<button class="button" data-nav="publish">نشر حصة جديدة</button>'
         : "",
     ) +
-    `<div class="filters"><div><label for="class-type">نوع الحصة</label><select id="class-type"><option value="">كل الأنواع</option>${Object.entries(
-      typeNames,
-    )
+    `<div class="filters">
+    <div>
+    <label for="class-type">نوع الحصة</label>
+    <select id="class-type">
+    <option value="">كل الأنواع</option>${Object.entries(typeNames)
       .map(
         ([key, label]) =>
           `<option value="${key}" ${key === classFilter ? "selected" : ""}>${label}</option>`,
       )
-      .join(
-        "",
-      )}</select></div><div><strong>الحجوزات</strong><p class="muted">${result.pagination.totalItems} حصة ضمن الجدول</p></div></div><h2 class="sr-only">الحصص المتاحة</h2><section class="class-list">${result.data.map(classCard).join("")}</section>${result.data.length ? "" : empty("ما في حصص بهالتصنيف", "جرّب نوع حصة آخر.")}${pager(result.pagination, "class-page")}`
+      .join("")}</select>
+    </div>
+    <div>
+    <strong>الحجوزات</strong>
+    <p class="muted">${result.pagination.totalItems} حصة ضمن الجدول</p>
+    </div>
+    </div>
+    <h2 class="sr-only">الحصص المتاحة</h2>
+    <section class="class-list">${result.data.map(classCard).join("")}</section>${result.data.length ? "" : empty("ما في حصص بهالتصنيف", "جرّب نوع حصة آخر.")}${pager(result.pagination, "class-page")}`
   );
 }
 async function bookingsView() {
@@ -299,7 +364,30 @@ async function bookingsView() {
       "الحضور يُسجّل بمسح QR عند المدرب أثناء الحصة. عدم المسح يُحسب غياباً بعد نهايتها.",
     ) +
     (rows.length
-      ? `<div class="table-wrap"><table><thead><tr><th>الحصة</th><th>الموعد</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>${rows.map((b) => `<tr><td>${escape(b.title)}<br><small>${escape(b.instructor)} · ${escape(b.studio)}</small></td><td>${date(b.starts)}<br>${time(b.starts)}</td><td>${badge(b.state)}${b.position ? "<br>ترتيبك " + b.position : ""}</td><td>${["confirmed", "waitlisted"].includes(b.state) && b.starts - now() >= 2 * 3600000 ? button("إلغاء الحجز", "cancel", b.id, "danger small") : "—"}</td></tr>`).join("")}</tbody></table></div>`
+      ? `<div class="table-wrap">
+    <table>
+    <thead>
+    <tr>
+    <th>الحصة</th>
+    <th>الموعد</th>
+    <th>الحالة</th>
+    <th>الإجراء</th>
+    </tr>
+    </thead>
+    <tbody>${rows
+      .map(
+        (b) => `<tr>
+    <td>${escape(b.title)}<br>
+    <small>${escape(b.instructor)} · ${escape(b.studio)}</small>
+    </td>
+    <td>${date(b.starts)}<br>${time(b.starts)}</td>
+    <td>${badge(b.state)}${b.position ? "<br>ترتيبك " + b.position : ""}</td>
+    <td>${["confirmed", "waitlisted"].includes(b.state) && b.starts - now() >= 2 * 3600000 ? button("إلغاء الحجز", "cancel", b.id, "danger small") : "—"}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    </table>
+    </div>`
       : empty("لسه ما عندك حجوزات", "روح لجدول الحصص واحجز أول تمرين."))
   );
 }
@@ -319,7 +407,11 @@ async function membershipView() {
         const subscribed = history.some(
           (m) => m.plan_id === p.id && m.ends > now(),
         );
-        return `<article class="plan ${subscribed ? "subscribed-plan" : ""}"><small>${p.days} يوم</small><h2>${escape(p.name)}</h2><div class="price">${money(p.price)}</div><ul class="check-list">${p.types.map((t) => "<li>" + typeNames[t] + "</li>").join("")}</ul>${subscribed ? '<span class="badge neutral">مشترك فيها</span><button class="button" disabled>مشترك بالفعل</button>' : button("اختيار الباقة", "purchase", p.id)}</article>`;
+        return `<article class="plan ${subscribed ? "subscribed-plan" : ""}">
+    <small>${p.days} يوم</small>
+    <h2>${escape(p.name)}</h2>
+    <div class="price">${money(p.price)}</div>
+    <ul class="check-list">${p.types.map((t) => "<li>" + typeNames[t] + "</li>").join("")}</ul>${subscribed ? '<span class="badge neutral">مشترك فيها</span><button class="button" disabled>مشترك بالفعل</button>' : button("اختيار الباقة", "purchase", p.id)}</article>`;
       })
       .join("") +
     '</section><section class="panel"><h2>سجل العضويات</h2>' +
@@ -346,7 +438,27 @@ async function passView() {
       "بطاقة الاشتراك",
       "اعرض الرمز للمدرب عند باب الحصة للتحقق من اشتراكك وتسجيل حضورك.",
     ) +
-    `<div class="qr-layout"><section class="pass"><div class="brand"><img src="/just-logo.png" alt=""><strong>GymPassJUST</strong></div><h2>${escape(session.user.name)}</h2><img class="qr" src="${p.image}" alt="رمز QR للتحقق من الاشتراك"><strong>${session.membership ? "اشتراك فعّال" : "لا يوجد اشتراك فعّال"}</strong><p><small>يتجدد الرمز تلقائياً كل 30 ثانية، وصلاحيته دقيقتان.</small></p></section><section class="panel"><h2>التحقق عند الباب</h2><p>المدرب يختار الحصة ويفحص الرمز. يتم تسجيل حضورك فقط إذا اشتراكك فعّال وحجزك مؤكد بالحصة.</p><label for="pass-token">نسخ الرمز للتحقق اليدوي</label><textarea id="pass-token" class="token-field" rows="4" readonly>${p.token}</textarea><div class="form-actions">${button("نسخ الرمز", "copy-token", "", "secondary")}${button("تحديث البطاقة", "refresh", "", "secondary")}</div></section></div>`
+    `<div class="qr-layout">
+    <section class="pass">
+    <div class="brand">
+    <img src="/just-logo.png" alt="">
+    <strong>GymPassJUST</strong>
+    </div>
+    <h2>${escape(session.user.name)}</h2>
+    <img class="qr" src="${p.image}" alt="رمز QR للتحقق من الاشتراك">
+    <strong>${session.membership ? "اشتراك فعّال" : "لا يوجد اشتراك فعّال"}</strong>
+    <p>
+    <small>يتجدد الرمز تلقائياً كل 30 ثانية، وصلاحيته دقيقتان.</small>
+    </p>
+    </section>
+    <section class="panel">
+    <h2>التحقق عند الباب</h2>
+    <p>المدرب يختار الحصة ويفحص الرمز. يتم تسجيل حضورك فقط إذا اشتراكك فعّال وحجزك مؤكد بالحصة.</p>
+    <label for="pass-token">نسخ الرمز للتحقق اليدوي</label>
+    <textarea id="pass-token" class="token-field" rows="4" readonly>${p.token}</textarea>
+    <div class="form-actions">${button("نسخ الرمز", "copy-token", "", "secondary")}${button("تحديث البطاقة", "refresh", "", "secondary")}</div>
+    </section>
+    </div>`
   );
 }
 async function verifyView() {
@@ -360,7 +472,27 @@ async function verifyView() {
       "فحص QR وتسجيل الحضور",
       "اختَر حصتك ثم امسح QR الطالب أثناء وقت الحصة.",
     ) +
-    `<section class="panel"><h2>فحص بطاقة الطالب</h2><p>لا يُقبل المسح بدون اشتراك فعّال وحجز مؤكد في الحصة المختارة.</p>${classes.length ? `<form id="verify-form"><label for="verify-class">الحصة المختارة</label><select id="verify-class" name="classId" required>${classes.map((c) => `<option value="${c.id}" ${c.id === current ? "selected" : ""}>${escape(c.title)} — ${date(c.starts)} ${time(c.starts)}</option>`).join("")}</select><label for="verify-token">رمز بطاقة الطالب</label><textarea id="verify-token" name="token" dir="ltr" rows="4" required placeholder="الصق الرمز أو استخدم الكاميرا"></textarea><div class="form-actions"><button class="button" type="submit">فحص وتسجيل الحضور</button>${button("فتح الكاميرا", "camera", "", "secondary")}</div></form>` : empty("لا توجد حصص قادمة", "انشر حصة أولاً. المسح متاح من بداية الحصة حتى نهايتها.")}<video id="camera" autoplay playsinline hidden></video><div id="verify-result" role="status" aria-live="polite"></div></section>`
+    `<section class="panel">
+    <h2>فحص بطاقة الطالب</h2>
+    <p>لا يُقبل المسح بدون اشتراك فعّال وحجز مؤكد في الحصة المختارة.</p>${
+      classes.length
+        ? `<form id="verify-form">
+    <label for="verify-class">الحصة المختارة</label>
+    <select id="verify-class" name="classId" required>${classes.map((c) => `<option value="${c.id}" ${c.id === current ? "selected" : ""}>${escape(c.title)} — ${date(c.starts)} ${time(c.starts)}</option>`).join("")}</select>
+    <label for="verify-token">رمز بطاقة الطالب</label>
+    <textarea id="verify-token" name="token" dir="ltr" rows="4" required placeholder="الصق الرمز أو استخدم الكاميرا"></textarea>
+    <div class="form-actions">
+    <button class="button" type="submit">فحص وتسجيل الحضور</button>${button("فتح الكاميرا", "camera", "", "secondary")}</div>
+    </form>`
+        : empty(
+            "لا توجد حصص قادمة",
+            "انشر حصة أولاً. المسح متاح من بداية الحصة حتى نهايتها.",
+          )
+    }<video id="camera" autoplay playsinline hidden>
+    </video>
+    <div id="verify-result" role="status" aria-live="polite">
+    </div>
+    </section>`
   );
 }
 async function inboxView() {
@@ -372,7 +504,18 @@ async function inboxView() {
       button("تحديد الكل كمقروء", "read", "", "secondary"),
     ) +
     (rows.data.length
-      ? `<section class="panel">${rows.data.map((n) => `<article class="activity"><span class="activity-dot" aria-hidden="true"></span><div><p>${escape(n.message)}</p><small>${date(n.created)} · ${time(n.created)} ${n.read_at ? "" : "· جديد"}</small></div></article>`).join("")}</section>${pager(rows.pagination, "list-page")}`
+      ? `<section class="panel">${rows.data
+          .map(
+            (n) => `<article class="activity">
+    <span class="activity-dot" aria-hidden="true">
+    </span>
+    <div>
+    <p>${escape(n.message)}</p>
+    <small>${date(n.created)} · ${time(n.created)} ${n.read_at ? "" : "· جديد"}</small>
+    </div>
+    </article>`,
+          )
+          .join("")}</section>${pager(rows.pagination, "list-page")}`
       : empty(
           "ما في إشعارات حالياً",
           "أي تحديث على حجزك أو عضويتك رح يظهر هون.",
@@ -386,7 +529,14 @@ async function dashboard() {
       const cap =
         d.capacityByWeek.find((c) => c.week === w.week && c.type === w.type)
           ?.capacity || 0;
-      return `<tr><td><bdi>${escape(w.week)}</bdi></td><td>${typeNames[w.type]}</td><td>${w.classes}</td><td>${cap ? Math.round((w.allocated / cap) * 100) : 0}%</td></tr>`;
+      return `<tr>
+    <td>
+    <bdi>${escape(w.week)}</bdi>
+    </td>
+    <td>${typeNames[w.type]}</td>
+    <td>${w.classes}</td>
+    <td>${cap ? Math.round((w.allocated / cap) * 100) : 0}%</td>
+    </tr>`;
     })
     .join("");
   return (
@@ -394,29 +544,81 @@ async function dashboard() {
       "المركز بنظرة واحدة",
       "مؤشرات العضوية والحجز من بيانات النظام الحالية.",
     ) +
-    `<section class="stats">${stat("الأعضاء الفعالون", d.activeMembers, "عضويات صالحة الآن")}${stat("الحجوزات القادمة", d.confirmed, "حجز مؤكد")}${stat("بانتظار مكان", d.waitlisted, "طلب على قوائم الانتظار")}</section><section class="split"><div class="panel"><h2>إشغال الحصص</h2><div class="table-wrap"><table><thead><tr><th>الأسبوع</th><th>النوع</th><th>الحصص</th><th>الإشغال</th></tr></thead><tbody>${weekly}</tbody></table></div></div><div class="panel"><h2>العضويات حسب الباقة</h2><div class="bar-chart">${d.activeByPlan.map((p) => `<div class="bar-row"><span>${escape(p.name)}</span><meter min="0" max="${Math.max(1, d.activeMembers)}" value="${p.count}" aria-label="${escape(p.name)}"></meter><strong>${p.count}</strong></div>`).join("")}</div></div></section>`
+    `<section class="stats">${stat("الأعضاء الفعالون", d.activeMembers, "عضويات صالحة الآن")}${stat("الحجوزات القادمة", d.confirmed, "حجز مؤكد")}${stat("بانتظار مكان", d.waitlisted, "طلب على قوائم الانتظار")}</section>
+    <section class="split">
+    <div class="panel">
+    <h2>إشغال الحصص</h2>
+    <div class="table-wrap">
+    <table>
+    <thead>
+    <tr>
+    <th>الأسبوع</th>
+    <th>النوع</th>
+    <th>الحصص</th>
+    <th>الإشغال</th>
+    </tr>
+    </thead>
+    <tbody>${weekly}</tbody>
+    </table>
+    </div>
+    </div>
+    <div class="panel">
+    <h2>العضويات حسب الباقة</h2>
+    <div class="bar-chart">${d.activeByPlan
+      .map(
+        (p) => `<div class="bar-row">
+    <span>${escape(p.name)}</span>
+    <meter min="0" max="${Math.max(1, d.activeMembers)}" value="${p.count}" aria-label="${escape(p.name)}">
+    </meter>
+    <strong>${p.count}</strong>
+    </div>`,
+      )
+      .join("")}</div>
+    </div>
+    </section>`
   );
 }
 async function members() {
   return (
     heading("الأعضاء", "افحص عضويات الطلاب وسجّل اشتراكاً تجريبياً.") +
-    `<form id="member-search" class="filters"><div><label for="member-query">اسم العضو أو البريد أو المعرّف</label><input id="member-query" name="q" placeholder="مثال: member-1"></div><button class="button">بحث</button></form><div id="member-results">${empty("ابحث عن عضو", "النتائج تعرض البيانات اللازمة للاستقبال فقط.")}</div>`
+    `<form id="member-search" class="filters">
+    <div>
+    <label for="member-query">اسم العضو أو البريد أو المعرّف</label>
+    <input id="member-query" name="q" placeholder="مثال: member-1">
+    </div>
+    <button class="button">بحث</button>
+    </form>
+    <div id="member-results">${empty("ابحث عن عضو", "النتائج تعرض البيانات اللازمة للاستقبال فقط.")}</div>`
   );
 }
 async function manage() {
   const plans = await api("/plans");
   return (
     heading("إدارة المركز", "انشر حصة جديدة أو أضف باقة عضوية.") +
-    `<div class="split">${classFormMarkup(session, typeNames)}<section class="panel"><h2>إضافة باقة</h2><form id="plan-form"><label for="plan-name">اسم الباقة</label><input id="plan-name" name="name" required maxlength="100"><label for="price">السعر بالدينار الأردني</label><input id="price" name="price" type="number" min="0" step="0.01" required><label for="days">المدة بالأيام</label><input id="days" name="days" type="number" min="1" max="366" required><fieldset><legend>الحصص المشمولة</legend>${Object.entries(
-      typeNames,
-    )
+    `<div class="split">${classFormMarkup(session, typeNames)}<section class="panel">
+    <h2>إضافة باقة</h2>
+    <form id="plan-form">
+    <label for="plan-name">اسم الباقة</label>
+    <input id="plan-name" name="name" required maxlength="100">
+    <label for="price">السعر بالدينار الأردني</label>
+    <input id="price" name="price" type="number" min="0" step="0.01" required>
+    <label for="days">المدة بالأيام</label>
+    <input id="days" name="days" type="number" min="1" max="366" required>
+    <fieldset>
+    <legend>الحصص المشمولة</legend>${Object.entries(typeNames)
       .map(
         ([key, label]) =>
-          `<label><input class="type-checkbox" type="checkbox" name="types" value="${key}" checked> ${label}</label>`,
+          `<label>
+    <input class="type-checkbox" type="checkbox" name="types" value="${key}" checked> ${label}</label>`,
       )
-      .join(
-        "",
-      )}</fieldset><div class="form-actions"><button class="button">إضافة الباقة</button></div></form><p class="footnote">الباقات الحالية: ${plans.map((p) => escape(p.name)).join("، ")}</p></section></div>`
+      .join("")}</fieldset>
+    <div class="form-actions">
+    <button class="button">إضافة الباقة</button>
+    </div>
+    </form>
+    <p class="footnote">الباقات الحالية: ${plans.map((p) => escape(p.name)).join("، ")}</p>
+    </section>
+    </div>`
   );
 }
 async function auditView() {
@@ -424,7 +626,36 @@ async function auditView() {
   return (
     heading("سجل التدقيق", "تغييرات العضوية والجدول وسجل قرارات الإدارة.") +
     (r.data.length
-      ? `<div class="table-wrap"><table><thead><tr><th>الوقت</th><th>الفاعل</th><th>العملية</th><th>السجل</th><th>التفاصيل</th></tr></thead><tbody>${r.data.map((a) => `<tr><td>${date(a.created)}<br>${time(a.created)}</td><td><bdi>${escape(a.actor)}</bdi></td><td><bdi>${escape(a.action)}</bdi></td><td><bdi>${escape(a.target)}</bdi></td><td>${escape(a.detail)}</td></tr>`).join("")}</tbody></table></div>${pager(r.pagination, "list-page")}`
+      ? `<div class="table-wrap">
+    <table>
+    <thead>
+    <tr>
+    <th>الوقت</th>
+    <th>الفاعل</th>
+    <th>العملية</th>
+    <th>السجل</th>
+    <th>التفاصيل</th>
+    </tr>
+    </thead>
+    <tbody>${r.data
+      .map(
+        (a) => `<tr>
+    <td>${date(a.created)}<br>${time(a.created)}</td>
+    <td>
+    <bdi>${escape(a.actor)}</bdi>
+    </td>
+    <td>
+    <bdi>${escape(a.action)}</bdi>
+    </td>
+    <td>
+    <bdi>${escape(a.target)}</bdi>
+    </td>
+    <td>${escape(a.detail)}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    </table>
+    </div>${pager(r.pagination, "list-page")}`
       : empty("السجل فارغ", "ستظهر هنا العمليات التي يجريها المستخدمون."))
   );
 }
@@ -505,7 +736,10 @@ async function purchase(planId, userId) {
   const plans = await api("/plans"),
     plan = plans.find((p) => p.id === Number(planId));
   showModal(
-    `<h2>تأكيد الاشتراك</h2><p>${escape(plan.name)} — ${money(plan.price)} لمدة ${plan.days} يوم.</p><div class="notice">عملية تجريبية فقط. لا يتم خصم أي مبلغ.</div><button class="button" data-action="confirm-purchase" data-id="${plan.id}" data-user="${escape(userId || "")}" data-key="${crypto.randomUUID()}">تأكيد الدفع التجريبي</button>`,
+    `<h2>تأكيد الاشتراك</h2>
+    <p>${escape(plan.name)} — ${money(plan.price)} لمدة ${plan.days} يوم.</p>
+    <div class="notice">عملية تجريبية فقط. لا يتم خصم أي مبلغ.</div>
+    <button class="button" data-action="confirm-purchase" data-id="${plan.id}" data-user="${escape(userId || "")}" data-key="${crypto.randomUUID()}">تأكيد الدفع التجريبي</button>`,
   );
 }
 async function memberSearch(query, p = 1) {
@@ -582,7 +816,8 @@ document.addEventListener("click", async (e) => {
       await render();
     } else if (action === "cancel") {
       showModal(
-        `<h2>إلغاء الحجز</h2><p>المقعد رح ينتقل لأول عضو مؤهل بقائمة الانتظار.</p>${button("تأكيد الإلغاء", "confirm-cancel", id, "danger")}`,
+        `<h2>إلغاء الحجز</h2>
+    <p>المقعد رح ينتقل لأول عضو مؤهل بقائمة الانتظار.</p>${button("تأكيد الإلغاء", "confirm-cancel", id, "danger")}`,
       );
     } else if (action === "confirm-cancel") {
       await post(`/bookings/${id}/cancellation`);
@@ -626,7 +861,8 @@ document.addEventListener("click", async (e) => {
       toast("تم نسخ الرمز.");
     } else if (action === "roster") await roster(id);
     else if (action === "cancel-class") {
-      modalBody.innerHTML = `<h2>تأكيد إلغاء الحصة</h2><p>سيتم إلغاء الحجوزات وإشعار جميع المسجلين.</p>${button("تأكيد إلغاء الحصة", "confirm-class-cancel", id, "danger")}`;
+      modalBody.innerHTML = `<h2>تأكيد إلغاء الحصة</h2>
+    <p>سيتم إلغاء الحجوزات وإشعار جميع المسجلين.</p>${button("تأكيد إلغاء الحصة", "confirm-class-cancel", id, "danger")}`;
     } else if (action === "confirm-class-cancel") {
       await post(`/classes/${id}/cancellation`);
       modal.close();
@@ -701,7 +937,12 @@ document.addEventListener("submit", async (e) => {
         classId: Number(data.classId),
       });
       document.querySelector("#verify-result").innerHTML =
-        `<div class="notice ${r.allowed ? "" : "error"}"><h2>${escape(r.message)}</h2><strong>${escape(r.member.name)}</strong><p><bdi>${escape(r.member.email)}</bdi></p>${[r.membership].map((m) => "<p>" + escape(m.name) + " — صالحة حتى " + date(m.ends, { year: "numeric" }) + "</p>").join("")}</div>`;
+        `<div class="notice ${r.allowed ? "" : "error"}">
+    <h2>${escape(r.message)}</h2>
+    <strong>${escape(r.member.name)}</strong>
+    <p>
+    <bdi>${escape(r.member.email)}</bdi>
+    </p>${[r.membership].map((m) => "<p>" + escape(m.name) + " — صالحة حتى " + date(m.ends, { year: "numeric" }) + "</p>").join("")}</div>`;
       form.reset();
       form.elements.classId.value = data.classId;
     }

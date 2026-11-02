@@ -4,49 +4,57 @@ SE440 CSP11 | University Sports Center Membership and Class Booking
 
 Jordan University of Science and Technology
 
-1 November 2026 | English report
+2 November 2026 | English report
 
-Part 1 target: 21 November 2026. Sections 0–16 contain the plan; sections 17–20 are outlines.
+Part 1 target: 22 November 2026. Sections 0–16 contain the plan; sections 17–20 are outlines.
 
-The system helps members buy a membership, book a sports class and enter with a QR pass. The main text is the team explanation. Appendix A holds the detailed diagrams. Proposed roles are listed in section 3; student IDs, actual authors and final approval still need confirmation.
+The system lets students buy a plan, book a class and show a QR to the instructor for attendance. This report explains the plan and current local result. Appendix A holds the detailed diagrams. Proposed roles are listed in section 3; student IDs, actual authors and final approval still need confirmation.
 
 [TOC]
+
 
 # 0 Project charter and business case
 
 Proposed section owner M1.
 
-GymPassJUST helps the university sports center manage memberships, class bookings and entry. It replaces paper cards and informal queues. The proposed sponsor is the Sports Center Director, represented by the TA for the course.
+GymPassJUST helps the university sports center manage plans, class bookings and QR attendance. The proposed sponsor is the Sports Center Director, represented by the TA for this course. The aim is fair booking: never exceed the seat limit and give a free seat to the first eligible student in the waiting list. A proposed user test will check a booking in at most three screens and under 30 seconds with five participants. That test still needs real participants.
 
-Our goal is a working local system with fair booking rules. A class must never exceed its capacity. A free seat should go to the first eligible waiting member. The final target is a booking journey under 30 seconds and no more than three screens, checked with five users.
+The plan is for four students over 14 weeks, with eight hours per person each week. This gives 448 hours: 384 planned hours and 64 hours for known risks. At an assumed JOD 5 per hour, the baseline is JOD 2,240. These are estimates, not money already spent.
 
-The team has four members. The planned limit is 4 x 8 hours x 14 weeks = 448 hours. At an estimated JOD 5 per hour, the cost baseline is JOD 2,240. This is a planning estimate, not money already spent.
+The business example assumes JOD 1,800 benefit and JOD 800 maintenance each year, leaving JOD 1,000. For three years at 8%: NPV = -2240 + 1000/1.08 + 1000/1.08^2 + 1000/1.08^3 = JOD 337.10. NPV compares the initial cost with the value of future benefits today. The benefit estimate needs sponsor approval.
 
-The business example assumes JOD 1,800 benefit per year and JOD 800 yearly maintenance. That leaves JOD 1,000 per year. With an 8% discount rate over three years: NPV = -2240 + 1000/1.08 + 1000/1.08^2 + 1000/1.08^3 = JOD 337.10. NPV means the value of future benefits after allowing for time. These benefit estimates need sponsor approval.
+
+
 
 # 1 Introduction and project overview
 
 Proposed section owner M1.
 
-This report explains what GymPassJUST does, how we plan the work and how we check the result. The project follows CSP11 in the supplied SE440 textbook. The interface switches between Arabic and English, including page direction. The reports are English.
+The system has three account types: student, instructor and manager. Students buy a plan and book classes. Instructors publish their classes and scan students' QR codes. The manager handles accounts, plans, classes and reports. The interface switches between Arabic and English.
 
-The supplied schedule gives Part 1 on 21 November 2026 and the final report on 9 January 2027. Final discussions are 10–16 January. The chapter has different checkpoint dates, so the latest instructor notice should be kept with the submission.
+A normal first launch creates four login accounts and three plan options. It does not create memberships or classes. Counts come from records saved through the system. The large set of test students is used only in isolated tests. Payments are simulated, and the accounts are separate from official university accounts. The course brief assumes 5–7 students; this plan uses the four-member team supplied for the project.
 
-Normal startup creates four local access accounts and three plan options, with no automatic memberships or classes. Counts use saved registrations and purchases. The 1,500-member fixture exists only in isolated automated tests. Legacy fixture data is removed after a database backup; registered accounts, purchased memberships and manually published classes are preserved. Payments are simulated. Local email/password accounts are real and saved in SQLite; they are separate from official university accounts. The original brief assumes 5–7 students; this plan uses the four-member team provided by the user.
+
+
 
 # 2 Development approach and life cycle
 
 Proposed section owner M1.
 
-We use fixed submission dates and short development cycles called sprints. First we plan the requirements and design. Then each sprint adds a working part and its tests.
+Use three small sprints: login and plans; booking and waiting lists; then QR attendance and reports. At the end of each sprint, show the working pages and check the related rules. Review the next tasks before starting them.
 
-Sprint 1 covers login, memberships and the timetable. Sprint 2 covers booking, waiting lists and cancellation. Sprint 3 covers instructor QR attendance, class-end absence and reports. Before adding the next part, we check that the current part works.
+Keep the first release small enough for four students to explain and maintain. Record a requested change, its effect on time and effort, and who should approve it. The supplied course dates remain the submission baseline.
+
+
+
 
 # 3 Project organization and governance
 
 Proposed section owner M1.
 
-The duties below are proposed. Each person must confirm their actual work before submission. M1–M4 match the names in team.json. Student IDs still need to be filled.
+The assignments below are a proposed division of work for four members. M1 to M4 match team.json. The students still need to add their IDs and actual contributions.
+
+In the RACI table, R does the work, A approves it, C gives advice and I receives updates. Hold a short weekly meeting. Bring unresolved scope or deadline problems to the TA. These tables are a plan, not a record of completed student work.
 
 | Member | Main duty |
 | --- | --- |
@@ -54,9 +62,6 @@ The duties below are proposed. Each person must confirm their actual work before
 | M2 Mai Qaseem Mohammad Al Rabayah | Arabic pages and usability |
 | M3 Alaa Al Din Ziad Ali Al Tawalbeh | Server, database and booking rules |
 | M4 Oday Mahmoud Mohammad Al Hajj | Tests, backup and deployment |
-
-
-RACI makes responsibilities clear. R does the task, A approves the result, C is consulted and I is informed. These are planned assignments.
 
 | Task | M1 | M2 | M3 | M4 | Sponsor |
 | --- | --- | --- | --- | --- | --- |
@@ -67,15 +72,15 @@ RACI makes responsibilities clear. R does the task, A approves the result, C is 
 | Scope change | R | C | C | C | A |
 
 
-Meet weekly, record blockers and review changes before merging them. M1 takes unresolved scope or deadline issues to the TA. The sponsor approves scope and final acceptance. Actual authors and student contributions must come from real team work.
-
 # 4 Scope and requirements management
 
 Proposed section owner M1.
 
-The final user request is the working scope for this version. It changes the textbook baseline: only students, instructors and the manager remain. The instructor scans the student QR for a selected class. The server checks subscription AND booking, then records attendance in one transaction. Manual attendance buttons and separate security/reception roles are removed.
+The current scope uses student, instructor and manager accounts. The instructor scans a student's QR for a selected class. The student must have both a suitable active plan and a confirmed booking in that class. If either is missing, attendance stays unchanged.
 
-The instructor can scan at any time from class start until class end. A booked student who is not scanned becomes absent after class end. A duplicate scan reports that the student was already checked in and does not add another attendance record. This revision does not apply an automatic seven-day suspension. The course instructor should review these documented changes against CSP11.
+Scanning stays open from class start until class end. A booked student without a scan becomes absent after the class. A repeated scan does not add another attendance record. Manual attendance, separate reception/security accounts and an automatic seven-day suspension are outside this revision. These changes from the textbook baseline need course review.
+
+A student can book within 48 hours before a class and cancel a booking at least two hours before it. The assigned instructor or manager can cancel the class until its end. Cancelled classes hide after 24 hours from cancellation; completed classes hide after 24 hours from their end. History remains saved. A student cannot buy the same plan while it is active or queued.
 
 | ID | Current behavior | Check |
 | --- | --- | --- |
@@ -96,33 +101,31 @@ The instructor can scan at any time from class start until class end. A booked s
 | FR-15 | Instructor verifies at the class door | Security/reception accounts were removed by the user |
 | FR-16 | Manager views the audit log | Record purchases, publication and successful QR attendance |
 
-
-Buying a plan that is already active or queued is rejected on the server and its card is marked Subscribed. A new purchase of the same plan becomes available after expiry. Other plans may still be purchased. Booking opens 48 hours before start; student cancellation closes two hours before start. An assigned instructor or manager may cancel a class until its end. Cancelled classes disappear from the timetable 24 hours after cancellation, and completed classes 24 hours after their end. Booking history remains saved. Waiting-list order and seat capacity are protected by a database transaction.
-
 | Quality target | Evidence |
 | --- | --- |
-| 95% of booking requests under two seconds with 300 members | Local result: 689.93 ms. Hosting test still needed |
+| 95% of booking requests under two seconds with 300 members | Local result: 894.84 ms. Hosting test still needed |
 | 99.5% availability during opening hours | Pilot monitoring still needed |
 | HTTPS, role checks, password hashes and signed QR | Role/QR tests pass; real HTTPS hosting still needed |
 | No high or critical security findings | Dependency and local checks done; independent review still needed |
 | Only needed personal data; remove it after retention ends | 365-day cleanup after the latest membership end; policy review needed |
 | WCAG 2.1 AA accessibility | Labels and keyboard support added; full review still needed |
 | Four main browsers and phones from 360px | In-app Chromium tested; other browsers still needed |
-| At least 70% backend statement coverage | Measured 93.89% |
+| At least 70% backend statement coverage | Measured 93.92% |
 | Daily backup and a successful restore | Local restore passed; off-host backup still needed |
 | One deployment command or pipeline | Docker files supplied; Docker engine was unavailable |
+
 
 # 5 Architecture and design
 
 Proposed section owner M3.
 
-The browser uses plain HTML, CSS and JavaScript. The Node.js server checks every request. SQLite stores the accounts, plans, classes, bookings, notifications and audit log. The interface switches between Arabic and English.
+The system has three main parts. HTML and CSS show the pages. Browser JavaScript sends requests to the Node.js server. The server checks the rules and reads or writes SQLite. Pages do not decide permissions or attendance on their own.
 
-The student opens Membership pass. The server signs a QR token valid for two full minutes from issuance; the displayed card refreshes every 30 seconds and when returning to the browser tab. The instructor selects their own class and scans this token. The server checks the instructor, class time, token signature, active suitable plan and confirmed booking. Only then does it change the booking to checked_in. At class end the minute job changes it to attended; unscanned confirmed bookings become no_show. Absence uses the original class end time even after downtime.
+For QR attendance, the instructor chooses a class and scans the student's code. The server checks the instructor, class time, signed code, active plan and booking. It then saves checked_in. After class end, the minute job changes checked_in to attended and an unscanned confirmed booking to no_show.
 
-The camera uses the browser decoder where available and a local jsQR fallback otherwise. No image is sent to a third party. An instructor can also paste the QR text during a classroom demonstration. Camera permission and a secure browser origin are needed for a real camera session.
+A QR lasts two full minutes and refreshes every 30 seconds, including after returning to its browser tab. The camera uses the browser reader or local jsQR. Code text can also be pasted for a one-device demonstration. Camera images stay in the browser.
 
-Local accounts use salted scrypt password hashes and private session cookies. The manager creates staff accounts; students cannot choose a staff role. SQLite supports this one-server project; more application instances require a shared database and new tests.
+Account passwords are stored as hashes. A private cookie identifies a signed-in user. The design uses one application server with SQLite; adding more servers would need a shared database and new tests.
 
 | API | Purpose | Role |
 | --- | --- | --- |
@@ -133,11 +136,14 @@ Local accounts use salted scrypt password hashes and private session cookies. Th
 | GET /api/bookings | Read own booking/attendance history | Signed-in user |
 | GET /api/dashboard | Read totals | Manager |
 
+
 # 6 Schedule management
 
 Proposed section owner M1.
 
-The schedule below uses the supplied course screenshot. The week dates are a planning interpretation of that screenshot.
+Use the supplied course schedule: planning submission on 21 November 2026, planning discussion on 22–28 November, final submission on 9 January 2027 and final discussion on 10–16 January. The week-15 online test date is still to be confirmed.
+
+The main order is requirements, design, login and plans, booking and waiting list, QR attendance, tests, then handover. Check progress every week. Raise a likely delay of more than three days early; the one-week variance target does not extend a course deadline.
 
 | Weeks | Main work | Control date |
 | --- | --- | --- |
@@ -149,16 +155,18 @@ The schedule below uses the supplied course screenshot. The week dates are a pla
 | 14 | Presentation and discussion | 10–16 Jan 2027 |
 | 15 | Individual laboratory test | Instructor to confirm |
 
-
-The main dependency path is requirements, design, membership, booking, attendance and final testing. This is the critical path: a delay in one of these can delay the final result. Review progress weekly. A projected delay of more than three days should be discussed early; the one-week variance target does not give permission to submit late.
-
 ![Schedule chart: each green bar shows when a task is planned](diagrams/09-gantt.png)
+
 
 # 7 Cost management
 
 Proposed section owner M1.
 
-The estimate uses hours instead of actual payments. The hourly rate is an assumed JOD 5.
+Estimate effort at JOD 5 per hour. The table separates planned work, risk reserve and extra sponsor reserve. The 64 risk hours are already included in the 448-hour team limit.
+
+The planned 384 hours are: planning/design 144, checkpoint 16, login/membership 32, booking 40, attendance/reports 40, interface 32, tests 32, final report/handover 16 and presentation 32.
+
+Earned value compares three numbers: PV is the work planned by a date, EV is the work accepted and AC is its actual effort cost. These need real records. Teaching example only: PV=800, EV=720 and AC=900 JOD. SV=EV-PV=-80 and CV=EV-AC=-180. SPI=EV/PV=0.90 and CPI=EV/AC=0.80 show delay and higher cost in this example. With BAC=2240, EAC=BAC/CPI=2800, ETC=EAC-AC=1900 and VAC=BAC-EAC=-560 JOD. These are not measured team results.
 
 | Item | Hours | JOD |
 | --- | --- | --- |
@@ -169,35 +177,33 @@ The estimate uses hours instead of actual payments. The hourly rate is an assume
 | Maximum budget estimate |  | 2464 |
 
 
-The work estimate is planning/design 144h, checkpoint 16h, login/membership 32h, booking 40h, attendance/reports 40h, interface 32h, tests 32h, final report/handover 16h and presentation 32h. The 64h risk reserve is already inside the 448h limit.
-
-Earned value compares the plan with accepted work. PV is the value planned by a date. EV is the value of work accepted. AC is the cost of effort actually used. These must come from actual records.
-
-Teaching example only: PV=800, EV=720 and AC=900 JOD. Schedule difference SV=EV-PV=-80. Cost difference CV=EV-AC=-180. SPI=EV/PV=0.90 and CPI=EV/AC=0.80. Both below 1 show that the example is behind plan and over cost. With BAC=2240, EAC=BAC/CPI=2800, ETC=EAC-AC=1900 and VAC=BAC-EAC=-560 JOD. These are not claimed project actuals.
-
 # 8 Resource management
 
 Proposed section owner M1.
 
-Each member has a planned maximum of eight hours a week. In weeks 1–6, each person uses six planned hours and keeps two for risks. In week 7, each uses four planned hours and keeps four. In weeks 8–14, each has eight planned hours. This gives 384 planned team hours and 64 reserve hours.
+Each member has at most eight planned hours per week. In weeks 1–6, use six hours for planned tasks and keep two for risks. In week 7, split them four and four. In weeks 8–14, use eight planned hours. The totals are 384 planned hours and 64 reserve hours.
 
-M1 practices requirements and cost calculations. M2 practices HTML/CSS/JavaScript and Arabic layout. M3 practices Node.js, SQL and login. M4 practices testing and recovery. Current skill levels have not been measured. M4 backs up M3 on tests and database work; M2 and M4 review usability together. Record exams and absences in the availability calendar and adjust the plan early.
+M1 covers planning and costs, M2 the pages, M3 the server and database, and M4 tests and recovery. This is a proposed allocation. Members should help each other and record exams or absences before changing the schedule.
+
+
+
 
 # 9 Stakeholders and communication
 
 Proposed section owner M1.
 
-The sponsor/TA reviews scope and acceptance. Members need easy, fair booking. Instructors need their class roster and a fast QR attendance check. University IT needs safe login, hosting and recovery. Finance and privacy contacts review the records relevant to their work.
+Students need simple booking. Instructors need their class list and a quick QR check. The sponsor/TA reviews scope and acceptance. University IT reviews hosting, login and recovery. Finance and privacy contacts review the records relevant to them.
 
-Hold one short team meeting per week and request a 30-minute TA review every two weeks. A status note says what was accepted, what comes next, hours used, blockers and decisions needed. Record real decisions; no past meetings are assumed.
+Plan one short team meeting each week and a 30-minute TA review every two weeks. Write what is done, what comes next, time used, problems and decisions needed. Only record meetings and approvals that actually happen.
 
 ![Stakeholder grid: who needs close decisions, information or consultation](diagrams/10-stakeholder-grid.png)
+
 
 # 10 Risk management
 
 Proposed section owner M4.
 
-A risk is something that might go wrong. The table gives an estimated chance and the hours needed if it happens. The response says what to do when its trigger appears.
+A risk is a problem that may happen. The table gives an estimated chance, effort and response. Check the triggers each week. Use the 64-hour risk reserve for agreed responses and ask the sponsor before using the extra reserve. The risk list should be updated when the team learns more.
 
 | Risk | Owner | Chance / hours | Trigger and response |
 | --- | --- | --- | --- |
@@ -217,85 +223,112 @@ A risk is something that might go wrong. The table gives an estimated chance and
 | R14 | M1 | 20% / 16h | Team/schedule conflict: obtain the TA decision |
 
 
-Expected effort is chance x hours. For example, R01 is 0.30 x 24 = 7.2h. The fourteen risks total 60.4h, rounded to a 64h reserve. These are estimates. Review risks weekly and record reserve use. A problem that has already happened goes in the issue log.
-
 # 11 Quality management
 
 Proposed section owner M4.
 
-A feature is done when its rule works, its rejection cases are tested, the Arabic screen gives a clear result and the documentation is updated. A release also needs coverage, load and restore evidence. Do not lower a test threshold to make a failed check pass.
+A task is done when the rule works, invalid requests are rejected, the screen gives a clear result and the notes match the code. Keep the existing tests and the minimum 70% backend statement coverage. Check capacity, load and backup recovery before a release.
 
-Review the code for correct behavior, readable structure, access checks and slow queries. A capacity or privacy failure blocks release. A defect record needs steps, expected result, actual result, owner and a repeat test. Source formatting uses Prettier. It makes code easier to read; it does not prove the code is correct.
+For a defect, record the steps, expected result, actual result, owner and repeat check. A capacity or privacy failure stops release until fixed. Formatting helps people read the code; it does not prove that the program is correct.
+
+
+
 
 # 12 Security and privacy
 
 Proposed section owner M3.
 
-The server checks the role and ownership on every protected route. A student cannot scan attendance for themselves; only the instructor assigned to the selected class can do it. A valid QR alone is not enough: the active suitable subscription and confirmed class booking must both exist in SQLite. Unknown, modified, expired, unbooked or unsubscribed QR attempts leave attendance unchanged.
+Check the user's role and ownership on the server. Only the instructor assigned to a class may scan attendance for it. A valid QR alone is not enough: the suitable active plan and confirmed booking must also exist in the database. Rejected scans do not change attendance.
 
-Passwords are saved as salted scrypt hashes. Session cookies are HttpOnly. Changes require a matching Origin and CSRF token. Login/signup limits are persistent. Text is escaped and SQL values use prepared statements. The four initial handover passwords are kept outside Git and public web files.
+Passwords use salted scrypt hashes. A hash is saved instead of the password. Private session cookies identify the user. Origin and CSRF checks protect changes made through forms. Signup always creates a student; only the manager creates staff accounts. SQL values are passed separately from SQL text, and displayed text is escaped.
 
-The database keeps the older schema tables for a non-destructive upgrade. Old security/reception accounts cannot log in or access APIs and are omitted from the handover file. No passwords or live student data are placed in reports. HTTPS, university SSO and an independent security review remain pilot activities.
+Initial passwords, live data and private settings stay outside Git. Older schema records remain compatible, but removed reception/security roles cannot sign in. HTTPS, official university identity and an independent security review remain work for a real pilot.
+
+
+
 
 # 13 Tools and sourcing
 
 Proposed section owner M3.
 
-The runtime uses Node.js 24, Express 5.1.0 for routes, jose 6.2.1 for identity-token checks and qrcode 1.5.4 for QR images. These libraries use MIT licenses. SQLite is public domain. c8 10.1.3 measures coverage and Prettier 3.6.2 formats source; these are development tools. Their licenses are ISC and MIT respectively.
+The app uses Node.js 24 and SQLite. Express handles URLs, qrcode creates the QR image, jsQR reads camera frames and jose supports the optional identity-provider login. c8 measures test coverage and Prettier formats source. package-lock.json records the installed versions.
 
-The application uses free local tools and simulated payment. There is no paid service in the local plan. Exact package versions are in package-lock.json. Install with npm ci --ignore-scripts. Review library licenses and security warnings before an upgrade. Production installs leave out development tools. Actual cloud/VM and identity service choices need University IT input.
+The local project uses free tools and simulated payments. Install with npm ci --ignore-scripts. Check package licenses and security findings before upgrades. Runtime packages use MIT, except jsQR uses Apache-2.0; SQLite is public domain. Development tools have their own licenses. Hosting and identity-service choices need University IT input.
+
+
+
 
 # 14 Configuration management
 
 Proposed section owner M4.
 
-Keep source, schema, seed, tests, report sources and diagrams in Git. Keep passwords, private environment files, live databases and backups out of the repository. Use short branches, review changes and merge after checks pass.
+Keep source, tests, report sources and diagrams in Git. Keep passwords, live databases, backups and private settings out. Make small changes and check them before saving an accepted version.
 
-Version 1.2.1 identifies this local package. Use a patch version for a compatible fix, a minor version for a compatible feature and a major version for a breaking change. Save the accepted version and its evidence. Back up the database before a schema change. A real team repository and actual student contributions still need to be supplied; generated commits are not student work history.
+Version 1.2.2 is a readability update. It keeps the agreed behavior and database format. Save release evidence and back up data before future schema changes. The public project repository exists; student authorship and actual team contributions still need to be recorded by the team.
+
+
+
 
 # 15 Construction plan
 
 Proposed section owner M3.
 
-Build in this order: login, membership, timetable, booking/waiting list, attendance/QR and reports. Keep the browser code separate from server rules and database setup. Use shared server rules for the screens and tests.
+Build and explain the program in this order: login, plans, timetable, booking, waiting list and QR attendance. src/server.js receives requests. src/service.js checks the gym rules. src/db.js creates the tables. Browser pages stay in public/.
 
-Each sprint ends with a working demo and checks for its rules. The supplied CI workflow installs fixed packages, checks JavaScript, runs tests and the load test, checks runtime dependencies and saves evidence. It has not run in a remote team repository. The local commands were run.
+The readability update gives the important variables clear names and breaks long HTML blocks into separate lines. Role checks, seat counting and booking eligibility are separate named steps. The CI workflow is included. This report records local verification; remote workflow results should be checked separately.
+
+
+
 
 # 16 Test plan
 
 Proposed section owner M4.
 
-Tests use isolated databases and controlled clocks. They check the booking window, capacity, waiting order, duplicate payments, duplicate subscriptions, local login and staff-role restrictions.
+Tests use isolated databases and controlled time. They cover login, permissions, plan purchase, duplicate plans, capacity, booking times, cancellation and FIFO waiting order.
 
-QR tests cover an active booked student, an inactive subscription, a student without a confirmed booking, a plan excluding the class, the wrong instructor, a modified/expired QR and a duplicate scan. Attendance remains open after the first ten minutes and until class end. Unscanned bookings become absent only after the end. The scheduler uses the class end as the event time and sends the absence message once.
+QR cases include an active booked student, no active plan, no booking, an unsuitable plan, wrong instructor, altered or expired code and repeated scans. Other checks cover cancellation by instructor/manager, 24-hour timetable hiding and removal of old generated data. No-show is recorded only after the class ends.
 
-The current suite reports 30 passing tests and 93.89% backend statement coverage. Coverage measures executed code, not a percentage of correctness. The encoder/decoder round-trip test verifies that jsQR reads the QR output. Real browser checks used the instructor form to confirm valid attendance and reject an active unbooked student and an expired membership. Actual camera hardware was not exercised.
+The current suite has 30 passing tests and 93.92% backend statement coverage. Coverage shows how much code ran during the tests; it is not a correctness percentage. The local 300-request test confirmed 20 bookings and queued 280 for 20 seats, with a p95 time of 894.84 ms. It uses one server and loopback HTTP, so it does not measure university-host or internet performance.
 
-The new local 300-request burst measured 689.93 ms p95, with 20 confirmed and 280 waiting for 20 seats. The test uses pre-created sessions, one process and loopback HTTP; it is not a university-host performance claim. Independent usability, the full browser/WCAG matrix and security review remain open.
+The encoder/decoder check confirms that jsQR reads the generated QR format. Browser checks cover valid and rejected scans, cancellation and language switching. Camera hardware, five real usability participants and the full independent browser, accessibility and security reviews remain pending.
+
+
+
 
 # 17 Deployment plan
 
 Proposed section owner M4.
 
-Outline: prepare the host, HTTPS and identity provider; seed test data, run checks and keep a rollback copy. Actual hosting evidence belongs in the final report.
+Outline for the final phase: For local use, install Node.js 24, open the project folder and run Start-GymPass.cmd, or npm ci --ignore-scripts followed by npm start. Open http://localhost:3000 after the ready message. First launch generates four local logins in accounts/initial-accounts.md. It creates no memberships or classes. Later launches keep saved records.
+
+
+
 
 # 18 Support and operations
 
 Proposed section owner M4.
 
-Outline: agree support contacts, check health and backups, provide the user guide and rehearse handover. Confirm the real service targets before the pilot.
+Outline for the final phase: The manager is the proposed first contact for account and plan problems. The instructor handles class QR checks. Confirm real support contacts and the proposed 06:00–23:00 service hours before a pilot.
+
+
+
 
 # 19 Maintenance plan
 
 Proposed section owner M3.
 
-Outline: keep a fault/improvement list, plan monthly updates and review the 160h yearly estimate after use.
+Outline for the final phase: Maintenance covers fixing faults, adapting to changes, preventing problems and improving useful features. Plan normal monthly updates and an urgent response to a serious security or data-loss fault.
+
+
+
 
 # 20 Monitoring and closure
 
 Proposed section owner M1.
 
-Outline: record actual progress and contributions, finish acceptance checks, obtain signatures and archive the agreed release.
+Outline for the final phase: At closure, compare the agreed scope with the working program and actual evidence. Confirm QR attendance, cancellation, class-end absence and duplicate-plan prevention. Record unresolved work, the accepted version and support instructions.
+
+
 
 # Appendix A Design diagrams
 
@@ -333,7 +366,7 @@ These wireframes show where the main information and buttons go. The final inter
 
 # Appendix B Assistance and remaining records
 
-OpenAI Codex helped draft the code, report text, diagrams and tests, and run local checks. The team must review and understand the work, record its actual changes and complete missing acceptance evidence. This declaration follows textbook section 13.8. No student interviews, signatures or completed five-person study are invented.
+OpenAI Codex assisted with code, writing, diagrams and local checks. The team must review the work, understand it and record its own contributions. This disclosure follows textbook section 13.8. Missing interviews, approvals and user-study results are not presented as completed work.
 
 # Appendix C References
 
