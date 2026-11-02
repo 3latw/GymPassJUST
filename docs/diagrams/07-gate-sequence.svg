@@ -12,8 +12,8 @@
 <!-- a -->
 <g id="node1" class="node">
 <title>a</title>
-<path fill="#edf4fa" stroke="#306284" d="M240.37,-488.16C240.37,-488.16 30.33,-488.16 30.33,-488.16 24.33,-488.16 18.33,-482.16 18.33,-476.16 18.33,-476.16 18.33,-464.16 18.33,-464.16 18.33,-458.16 24.33,-452.16 30.33,-452.16 30.33,-452.16 240.37,-452.16 240.37,-452.16 246.37,-452.16 252.37,-458.16 252.37,-464.16 252.37,-464.16 252.37,-476.16 252.37,-476.16 252.37,-482.16 246.37,-488.16 240.37,-488.16"/>
-<text xml:space="preserve" text-anchor="middle" x="135.35" y="-466.56" font-family="Arial" font-size="12.00">1 Student shows signed 60&#45;second QR</text>
+<path fill="#edf4fa" stroke="#306284" d="M243.71,-488.16C243.71,-488.16 26.99,-488.16 26.99,-488.16 20.99,-488.16 14.99,-482.16 14.99,-476.16 14.99,-476.16 14.99,-464.16 14.99,-464.16 14.99,-458.16 20.99,-452.16 26.99,-452.16 26.99,-452.16 243.71,-452.16 243.71,-452.16 249.71,-452.16 255.71,-458.16 255.71,-464.16 255.71,-464.16 255.71,-476.16 255.71,-476.16 255.71,-482.16 249.71,-488.16 243.71,-488.16"/>
+<text xml:space="preserve" text-anchor="middle" x="135.35" y="-466.56" font-family="Arial" font-size="12.00">1 Student shows signed 120&#45;second QR</text>
 </g>
 <!-- b -->
 <g id="node2" class="node">
@@ -55,7 +55,7 @@
 <g id="node5" class="node">
 <title>e</title>
 <path fill="#edf4fa" stroke="#306284" d="M236.69,-200.16C236.69,-200.16 34.01,-200.16 34.01,-200.16 28.01,-200.16 22.01,-194.16 22.01,-188.16 22.01,-188.16 22.01,-166.08 22.01,-166.08 22.01,-160.08 28.01,-154.08 34.01,-154.08 34.01,-154.08 236.69,-154.08 236.69,-154.08 242.69,-154.08 248.69,-160.08 248.69,-166.08 248.69,-166.08 248.69,-188.16 248.69,-188.16 248.69,-194.16 242.69,-200.16 236.69,-200.16"/>
-<text xml:space="preserve" text-anchor="middle" x="135.35" y="-180.72" font-family="Arial" font-size="12.00">5 Require active suitable membership</text>
+<text xml:space="preserve" text-anchor="middle" x="135.35" y="-180.72" font-family="Arial" font-size="12.00">5 Require active suitable membership&#13;</text>
 <text xml:space="preserve" text-anchor="middle" x="135.35" y="-166.32" font-family="Arial" font-size="12.00">AND confirmed booking in this class</text>
 </g>
 <!-- d&#45;&gt;e -->
@@ -68,7 +68,7 @@
 <g id="node6" class="node">
 <title>f</title>
 <path fill="#edf4fa" stroke="#306284" d="M247.7,-118.08C247.7,-118.08 23,-118.08 23,-118.08 17,-118.08 11,-112.08 11,-106.08 11,-106.08 11,-84 11,-84 11,-78 17,-72 23,-72 23,-72 247.7,-72 247.7,-72 253.7,-72 259.7,-78 259.7,-84 259.7,-84 259.7,-106.08 259.7,-106.08 259.7,-112.08 253.7,-118.08 247.7,-118.08"/>
-<text xml:space="preserve" text-anchor="middle" x="135.35" y="-98.64" font-family="Arial" font-size="12.00">6 Record attendance and audit atomically</text>
+<text xml:space="preserve" text-anchor="middle" x="135.35" y="-98.64" font-family="Arial" font-size="12.00">6 Record attendance and audit atomically&#13;</text>
 <text xml:space="preserve" text-anchor="middle" x="135.35" y="-84.24" font-family="Arial" font-size="12.00">Duplicate scan returns already checked in</text>
 </g>
 <!-- e&#45;&gt;f -->

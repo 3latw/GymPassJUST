@@ -1,0 +1,14 @@
+sequenceDiagram
+ participant p0 as Student
+ participant p1 as API / rules
+ participant p2 as SQLite
+ participant p3 as Next waiter
+ p0->>p1: Cancel own booking
+ p1->>p1: Check at least 2h before class starts
+ p1->>p2: BEGIN IMMEDIATE; cancel booking
+ p1->>p2: Select waiting students in created/id order
+ p2-->>p1: First candidate with valid plan and no overlap
+ p1->>p2: Confirm candidate; notify; audit; COMMIT
+ p1-->>p0: Return cancelled
+ p3->>p1: Later: GET /api/notifications
+ p1-->>p3: Return promotion message

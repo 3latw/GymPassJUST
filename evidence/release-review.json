@@ -2,7 +2,7 @@
   "date": "2026-11-02",
   "reviewer": "Codex local implementation and visual review",
   "independentExternalReview": false,
-  "sourceCommit": "bc1bc39aa1e3771bc929cb35b444ee230a242b21",
+  "sourceCommit": "ae1a29e4a091ad5eba989810cb53f3f82b56329b",
   "automatedTests": {
     "reported": 30,
     "passed": 30,
@@ -56,13 +56,14 @@
   },
   "browser": "Actual in-app Chromium flows and widths; see browser-checks.json",
   "pdfPages": {
+    "Code_Walkthrough.pdf": 2,
     "Discussion_Summary.pdf": 2,
-    "Final_Project_Report.pdf": 20,
-    "Part1_Planning_Report.pdf": 20,
-    "Test_Evidence_Report.pdf": 2
+    "Final_Project_Report.pdf": 10,
+    "Part1_Planning_Report.pdf": 10,
+    "Test_Evidence_Report.pdf": 1
   },
   "pdfGeometry": {
-    "pagesChecked": 43,
+    "pagesChecked": 25,
     "outOfBoundsTextPages": 0,
     "visualReview": "Rendered report bodies, code walkthrough and current QA screenshots reviewed"
   },
@@ -92,8 +93,8 @@
   "reportPages": {
     "Code_Walkthrough": 2,
     "Discussion_Summary": 2,
-    "Final_Project_Report": 19,
-    "Part1_Planning_Report": 19,
+    "Final_Project_Report": 10,
+    "Part1_Planning_Report": 10,
     "Test_Evidence_Report": 1
   },
   "localAccounts": {
@@ -140,5 +141,12 @@
     "Arabic/English university appearance",
     "Booking, plan and QR rules",
     "All30 existing test assertions and coverage threshold"
-  ]
+  ],
+  "reportRevision": {
+    "date": "2026-11-02",
+    "mainReports": "10 pages each; PMP 0-20 retained",
+    "figures": "C4 context/containers, deployment, entities, states, three lifeline sequences, five core wireframes plus manager",
+    "review": "All 20 revised pages rendered and visually inspected; no text outside safe area",
+    "authors": "Proposed owners only; actual student contributions require team confirmation"
+  }
 }

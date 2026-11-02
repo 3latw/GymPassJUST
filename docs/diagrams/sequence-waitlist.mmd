@@ -7,7 +7,7 @@ sequenceDiagram
     API->>Rules: Authorize and check cutoff
     Rules->>SQLite: BEGIN IMMEDIATE
     Rules->>SQLite: Cancel and select FIFO candidate
-    Rules->>Rules: Check membership suspension and overlap
+    Rules->>Rules: Check active suitable membership and overlap
     Rules->>SQLite: Confirm next eligible member
     Rules->>SQLite: Insert deduplicated inbox notification
     Rules->>SQLite: COMMIT

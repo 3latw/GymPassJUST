@@ -1,0 +1,12 @@
+sequenceDiagram
+ participant p0 as Student
+ participant p1 as Instructor
+ participant p2 as API / rules
+ participant p3 as SQLite
+ p0->>p1: Show signed QR (120s; refresh every 30s)
+ p1->>p2: POST /class-qr-check-ins {classId, token}
+ p2->>p2: Verify assigned instructor, time and signature
+ p2->>p3: BEGIN IMMEDIATE; read subscription + booking
+ p3-->>p2: Require active suitable plan AND confirmed booking
+ p2->>p3: Set checked_in; notify and audit; COMMIT
+ p2-->>p1: Success, or already checked in on repeat

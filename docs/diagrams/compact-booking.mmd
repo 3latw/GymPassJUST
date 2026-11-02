@@ -1,0 +1,13 @@
+sequenceDiagram
+ participant p0 as Student
+ participant p1 as Browser
+ participant p2 as API / rules
+ participant p3 as SQLite
+ p0->>p1: Choose class and press Book
+ p1->>p2: POST /api/bookings + CSRF
+ p2->>p3: BEGIN IMMEDIATE; read plan, class, bookings
+ p3-->>p2: Current membership, seats and overlaps
+ p2->>p2: Check role, 48h window and eligibility
+ p2->>p3: Insert confirmed OR waitlisted; notify; COMMIT
+ p2-->>p1: Return booking state
+ p1-->>p0: Show confirmation or queue position

@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-02",
+  "reports": [
+    {
+      "path": "docs/Part1_Planning_Report.pdf",
+      "pages": 10,
+      "sha256": "512cb802e61d9eddb267832f6eb6f9c9cbfecc97d46e80f2804a6be071dde88f",
+      "sections": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "numberedFigures": 9,
+      "AIAppendix": true
+    },
+    {
+      "path": "docs/Final_Project_Report.pdf",
+      "pages": 10,
+      "sha256": "df31b5f62a4c30a382b8887fc6fc5d70cc19a08b7c03a3ae66fd6771a24d7c91",
+      "sections": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "numberedFigures": 9,
+      "AIAppendix": true
+    }
+  ],
+  "visualReview": "All 20 revised report pages rendered and inspected; shared middle pages checked in both PDFs",
+  "safeAreaFailures": 0,
+  "applicationCodeChanged": false,
+  "templateMapping": "docs/Report_Requirements_Checklist.md",
+  "pending": "Student IDs, actual section authors, real contribution records and course acceptance"
+}

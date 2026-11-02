@@ -2,7 +2,7 @@
   "project": "GymPassJUST",
   "version": "1.2.2",
   "distribution": "GitHub public source",
-  "sourceCommit": "ae1a29e4a091ad5eba989810cb53f3f82b56329b",
+  "sourceCommit": "f2cf4865b766181d5588e22e1542a1453739b739",
   "files": [
     {
       "path": ".dockerignore",
@@ -51,8 +51,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "eca7b0988daadf46d76bdeaeaf556aa1cff7713cd5297204d9f8b34be002c12a",
-      "bytes": 9994
+      "sha256": "04abcf1d2cbcdc3dc759079635456192d3413a176438af06741d2ae466243ec6",
+      "bytes": 10306
     },
     {
       "path": "README_AR.md",
@@ -66,8 +66,8 @@
     },
     {
       "path": "START_HERE.md",
-      "sha256": "d497f76f2a51b3411761b4e36c2f4ff763a09b4a30d6b40c367bcf8b9a8534ce",
-      "bytes": 1883
+      "sha256": "16162e51886b4f779a8e5aaf728fc07be56fdea98b8e4ec6327bc3697e738a03",
+      "bytes": 2266
     },
     {
       "path": "Start-GymPass.cmd",
@@ -111,23 +111,28 @@
     },
     {
       "path": "docs/Final_Project_Report.md",
-      "sha256": "231e8a55c896a7a63304ebcab65379b514f867772291845f4ba9d1234dbf356b",
-      "bytes": 24160
+      "sha256": "b23b53b4c6b19e36676502bbfe715b1cc22b647d01ffd20f6340df43dca71cc2",
+      "bytes": 22985
     },
     {
       "path": "docs/Final_Project_Report.pdf",
-      "sha256": "ce3f0bba3f326756f6da7c91af4be441d47af83bd439023577a1fba11829750e",
-      "bytes": 1928749
+      "sha256": "df31b5f62a4c30a382b8887fc6fc5d70cc19a08b7c03a3ae66fd6771a24d7c91",
+      "bytes": 936427
     },
     {
       "path": "docs/Part1_Planning_Report.md",
-      "sha256": "68fd07f38cf9839a9b2c4118d8762db7cb3d3ff31833279fb9b02f0bb2ff6fa2",
-      "bytes": 22707
+      "sha256": "28771eef82322b575439faaa3cf97570412d726a5f2d8ae605bae82a46da9689",
+      "bytes": 22377
     },
     {
       "path": "docs/Part1_Planning_Report.pdf",
-      "sha256": "8cf82bf0123f38305c63680b83317fa1fdb9e74c8d7459a79186c37c65bfb72d",
-      "bytes": 1927660
+      "sha256": "512cb802e61d9eddb267832f6eb6f9c9cbfecc97d46e80f2804a6be071dde88f",
+      "bytes": 935956
+    },
+    {
+      "path": "docs/Report_Requirements_Checklist.md",
+      "sha256": "303e77be337af1ff00f58ad8ed5d79d1da35613abc3c9b5932385ccf87f4dead",
+      "bytes": 2566
     },
     {
       "path": "docs/Test_Evidence_Report.md",
@@ -246,18 +251,18 @@
     },
     {
       "path": "docs/diagrams/07-gate-sequence.dot",
-      "sha256": "6d5bd4090771f7739b809ee9b920dff63b94974b51de19949ee121b2faa17fa5",
-      "bytes": 710
+      "sha256": "55a49ab6585203433aa4d4cc479fcc134fd2b928bc7465267eebf8a01435e715",
+      "bytes": 713
     },
     {
       "path": "docs/diagrams/07-gate-sequence.png",
-      "sha256": "0258a361bef14a4901c4181414f7d7b28b26574057878ab429e4fd02af2c5555",
-      "bytes": 303527
+      "sha256": "42a913f260aee5afd05df4c1e69393b422749e36a967a2ca3760ba691ccfcf8f",
+      "bytes": 303559
     },
     {
       "path": "docs/diagrams/07-gate-sequence.svg",
-      "sha256": "b27ce9e4e0d5571090d1c3740cc320f37147a6452c9c3f8a112939620413a029",
-      "bytes": 6770
+      "sha256": "916f39e9942e00c10e258412f7cf1371a008a78def571fb64a7c51047fc5ea4b",
+      "bytes": 6781
     },
     {
       "path": "docs/diagrams/08-no-show-sequence.dot",
@@ -285,6 +290,111 @@
       "bytes": 69113
     },
     {
+      "path": "docs/diagrams/compact-booking.mmd",
+      "sha256": "204bd09d12205d40f8ac15f2a9e884cc4d74cb51528a4bb9c5e8028fda63a30a",
+      "bytes": 503
+    },
+    {
+      "path": "docs/diagrams/compact-booking.png",
+      "sha256": "53eecc8f03f878fab6a77cda29718e0b389e0640ee244d7b8bf18f1cc7f1baaf",
+      "bytes": 84025
+    },
+    {
+      "path": "docs/diagrams/compact-booking.svg",
+      "sha256": "5afb0822f07b26232ac6ed10b241c53d5493c5a41ab6d9ed4da47f3b08d31c90",
+      "bytes": 4199
+    },
+    {
+      "path": "docs/diagrams/compact-containers.png",
+      "sha256": "fb35ac994c493e17b489340e907e379182bceb3664f912b0f32164a95d3e0e56",
+      "bytes": 40147
+    },
+    {
+      "path": "docs/diagrams/compact-containers.svg",
+      "sha256": "e75087cc676eecd731526c8e054c448b4afd11160c2ffc2ee6a1986e6433ddde",
+      "bytes": 2317
+    },
+    {
+      "path": "docs/diagrams/compact-context.png",
+      "sha256": "8102d515276abc087cac65bbeb7bfc443e969a8b9615b2d23d34e16b594385a5",
+      "bytes": 49797
+    },
+    {
+      "path": "docs/diagrams/compact-context.svg",
+      "sha256": "ce6ba123ec5e372b3e31698dda3f01a715042cacda92380260f73e75d408cab2",
+      "bytes": 2242
+    },
+    {
+      "path": "docs/diagrams/compact-deployment.png",
+      "sha256": "27b3e9a3178d449f737ec8b8d1ae7a6a7f9e3d2521e7803856eb4b1709538f42",
+      "bytes": 48463
+    },
+    {
+      "path": "docs/diagrams/compact-deployment.svg",
+      "sha256": "95a4e5521998ae69b0b0d8c080cdb81d7999af0ab930df7bb81b07a2d3b2d361",
+      "bytes": 2410
+    },
+    {
+      "path": "docs/diagrams/compact-entities.png",
+      "sha256": "5a8e7199fb8be7f63b83794cc91546f9f3d28ae99f4ecf5733a33407fbc26fc8",
+      "bytes": 92256
+    },
+    {
+      "path": "docs/diagrams/compact-entities.svg",
+      "sha256": "8e10b46ed57bf22da2c4006ec6b58ef11def6f6d15c2b652237e77934d4449bb",
+      "bytes": 6521
+    },
+    {
+      "path": "docs/diagrams/compact-fifo.mmd",
+      "sha256": "bea497f68ef2df9c2ad3fe6656ad4fcd05591a922d53cfd716c7f3b8202e3e4e",
+      "bytes": 531
+    },
+    {
+      "path": "docs/diagrams/compact-fifo.png",
+      "sha256": "2bc952ccce52910cd81efc61b1da5aa1dd63eef348f0872b8f17e6bf545c481f",
+      "bytes": 86220
+    },
+    {
+      "path": "docs/diagrams/compact-fifo.svg",
+      "sha256": "131ef1ea593c012b342bfa646c817a39525ed2c504cd71d65e79739990fb4b65",
+      "bytes": 4412
+    },
+    {
+      "path": "docs/diagrams/compact-qr.mmd",
+      "sha256": "c775df21d5308b2362cbd9cd1f3b8863a04c0daa05fc09aefab6f01699d1be26",
+      "bytes": 522
+    },
+    {
+      "path": "docs/diagrams/compact-qr.png",
+      "sha256": "256a8abafbabec17ab21fabd292888d090a4b2b44bfc37454218bc2873973bd1",
+      "bytes": 86845
+    },
+    {
+      "path": "docs/diagrams/compact-qr.svg",
+      "sha256": "da460c3f4af49e758e8f606e0e40d1596e9f3ef944a0ba7a90b13ba0e8985dc1",
+      "bytes": 3996
+    },
+    {
+      "path": "docs/diagrams/compact-states.png",
+      "sha256": "37fd4a58b7c1e7a78a37c9e8e3d01e3bb0e3a3262a0c6536d0951f099093daa6",
+      "bytes": 33407
+    },
+    {
+      "path": "docs/diagrams/compact-states.svg",
+      "sha256": "47f35fcd24709d1f13ab6c141b6fa734dac298b80ee04c4c08f4b0bdc80e33c4",
+      "bytes": 2474
+    },
+    {
+      "path": "docs/diagrams/compact-wireframes.png",
+      "sha256": "3dd57c9fa59008f673e9a5bf807b25bf6e170061ed249246482a8a85f167dedc",
+      "bytes": 176673
+    },
+    {
+      "path": "docs/diagrams/compact-wireframes.svg",
+      "sha256": "f630e465b34a5e7be5dee1e3022fac1c1f72d9f7112aa2849a806d1a67213762",
+      "bytes": 9684
+    },
+    {
       "path": "docs/diagrams/schedule-gantt.mmd",
       "sha256": "97d44fd1bd736d90be342cf516c2c66f06b4a44597c4c97baf3259829100d4e2",
       "bytes": 523
@@ -301,8 +411,8 @@
     },
     {
       "path": "docs/diagrams/sequence-waitlist.mmd",
-      "sha256": "04095e8097ae87346a7fceaed368c4acbc92c8408c5c3bc1392b4ca48e035522",
-      "bytes": 515
+      "sha256": "ed8c9a75e1bd10991d03771cd0cf5ea3b63a6fde793a451aa594e66b64d30e35",
+      "bytes": 533
     },
     {
       "path": "docs/diagrams/wireframe-1-home.png",
@@ -331,13 +441,13 @@
     },
     {
       "path": "docs/requirements-traceability.md",
-      "sha256": "dec9cfd85cabc25ade9762e0b59ac5f2e393e3eed729468bd77f08cd1f9631ed",
-      "bytes": 1987
+      "sha256": "d16fa5137e170f0ef3fba4f71c594e3fc4836967cea778e9b267a3e643320c37",
+      "bytes": 2044
     },
     {
       "path": "docs/risk-register.md",
-      "sha256": "35ab3de7ba3e50cea1c390cdc7f130c7744847aa84333fb974c68bf716e76844",
-      "bytes": 2582
+      "sha256": "337e38916a872844b5b024d53d808720958b3f6d5f9fecb68ca43dc7c49d0527",
+      "bytes": 2753
     },
     {
       "path": "docs/security-checklist.md",
@@ -363,6 +473,11 @@
       "path": "evidence/browser-checks.json",
       "sha256": "02d5b3e08318cb015e5bfaf9e4526214a0d9fe4a0e955e054b68501a2f0affc8",
       "bytes": 959
+    },
+    {
+      "path": "evidence/concise-report-review.json",
+      "sha256": "4f4fd4343a2747ee79624c3f641ff030c7e5668d5aec726a23bd4d23c63f321e",
+      "bytes": 1356
     },
     {
       "path": "evidence/coverage-summary.json",
@@ -411,8 +526,8 @@
     },
     {
       "path": "evidence/release-review.json",
-      "sha256": "00645c9e65fdc40452b16c0994e7c0957e5a46bea0936025882551ed89666021",
-      "bytes": 5146
+      "sha256": "f0ba73093e52aec95c69b315489c7348f0c38f20ba8a8a37b0405cc552e61196",
+      "bytes": 5607
     },
     {
       "path": "evidence/runtime-audit-v121.json",

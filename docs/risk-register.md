@@ -6,8 +6,8 @@
 | R02 | M3 | 0.2 | 24 | Capacity race or database lock failure | Load test mismatch or busy errors | Transactional service, trigger and 100/300 request tests |
 | R03 | M3 | 0.3 | 16 | External identity provider misconfiguration | Callback mismatch or invalid issuer | Exact callback checklist and local protocol fixture; rehearse external IdP |
 | R04 | M3 | 0.3 | 16 | Incorrect FIFO or waitlist eligibility | Skipped valid member or wrong promotion | Stable created/id order, shared transaction, expiry and overlap tests |
-| R05 | M4 | 0.2 | 12 | No show boundary error or repeated suspension | Duplicate suspension or delayed job | Injected clock tests, unique event reference, job failure monitoring |
-| R06 | M3 | 0.2 | 16 | QR replay or leaked signing key | Unexpected token reuse or key exposure | HMAC purpose/expiry, unique consumed hash, protect env and DB, rotate key |
+| R05 | M4 | 0.2 | 12 | Wrong absence boundary or duplicate notification | A scan at the wrong time is accepted or a delayed job uses restart time | Injected-clock tests, use original class end, deduplicate notices and monitor job failures; no automatic suspension |
+| R06 | M3 | 0.2 | 16 | Invalid QR acceptance or leaked signing key | Forged/expired QR accepted or key exposure | Verify signature/purpose/120-second expiry, require live membership and class booking, protect signing keys; valid repeated scan is idempotent |
 | R07 | M2 | 0.3 | 16 | Arabic or accessibility defect | Overflow or keyboard blocker at 360px | RTL tokens, semantic controls and device checks |
 | R08 | M4 | 0.3 | 16 | Free host or Docker unavailable | No test VM by week 8 | Use local Node demo and request university VM; rehearse deployment early |
 | R09 | M4 | 0.1 | 24 | Database loss or unusable backup | Failed backup or restore integrity | Daily copies, separate restore test and off-host pilot copy |

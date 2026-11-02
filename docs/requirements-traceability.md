@@ -15,7 +15,7 @@ Final user scope overrides the textbook where explicitly recorded. See tests/cur
 | FR-09 | QR automatically records class attendance | Require BOTH an active suitable plan AND a confirmed class booking |
 | FR-10 | No QR scan means absent after class end | No ten-minute deadline; automatic seven-day suspension is outside this revision |
 | FR-11 | In-app confirmations and reminders | Deduplicate messages |
-| FR-12 | Instructor cancels their own future class | Cancel its reservations and notify students |
+| FR-12 | Assigned instructor or manager cancels a class until its end | Cancel remaining reservations and notify students; repeating cancellation is safe |
 | FR-13 | Manager views membership and booking totals | Use saved records; detailed class states remain in the roster |
 | FR-14 | Student sees booking and attendance states | Show only their own records |
 | FR-15 | Instructor verifies at the class door | Security/reception accounts were removed by the user |

@@ -124,9 +124,10 @@ Docker يحفظ قاعدة البيانات في volume دائم باسم `gympa
 
 - [ملخص المناقشة بالإنجليزي](docs/Discussion_Summary.pdf).
 - [دليل الشرح للأربعة بالعربي](docs/شرح_المشروع_للأربعة.md).
-- [تقرير التخطيط](docs/Part1_Planning_Report.pdf).
-- [التقرير النهائي](docs/Final_Project_Report.pdf).
+- [تقرير التخطيط](docs/Part1_Planning_Report.pdf): 10 صفحات بالإنجليزي مع المخططات.
+- [التقرير النهائي](docs/Final_Project_Report.pdf): 10 صفحات بالإنجليزي مع المخططات.
 - [تقرير الاختبارات](docs/Test_Evidence_Report.pdf).
+- [مطابقة متطلبات تقرير الدكتور](docs/Report_Requirements_Checklist.md): أماكن الأقسام والرسومات وما يحتاج تأكيداً من الفريق.
 
 للتحقق من الكود وقواعد النظام على Windows، من مجلد المشروع:
 
