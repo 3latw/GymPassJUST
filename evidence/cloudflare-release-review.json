@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-02",
+  "version": "1.3.0",
+  "url": "https://gympassjust.pages.dev",
+  "reviewer": "Codex implementation and self-review; no independent security acceptance claimed",
+  "automatedTests": {
+    "nodePassed": 31,
+    "cloudflareIntegrationPassed": 1,
+    "backendStatementCoverage": 93.98,
+    "backendBranchCoverage": 85.75,
+    "coverageScope": "src/**; the Cloudflare wrapper is checked by its separate runtime integration test"
+  },
+  "cloudflareLoad": [
+    {
+      "concurrentMembers": 100,
+      "capacity": 20,
+      "confirmed": 20,
+      "waiting": 80,
+      "errors": 0,
+      "p95Ms": 704.48
+    },
+    {
+      "concurrentMembers": 300,
+      "capacity": 20,
+      "confirmed": 20,
+      "waiting": 280,
+      "errors": 0,
+      "p95Ms": 1688.18
+    }
+  ],
+  "reviewAxes": {
+    "correctness": "Same shared booking and attendance rules; persistent SQLite transaction adapter; idle alarm and restart tested",
+    "readability": "Local runtime separated from shared HTTP/schema/rules; small Pages proxy and storage adapter",
+    "architecture": "Pages frontend plus one SQLite Durable Object; stable namespace/object name; local Node remains supported",
+    "security": "Same-origin/CSRF/roles preserved; private secrets encrypted in Cloudflare; bounded request body; per-client throttling header overwritten at Pages; backend public/preview URLs disabled",
+    "performance": "300 concurrent local Workerd bookings satisfy p95 below 2s with zero overflow; hosted internet throughput not measured"
+  },
+  "liveSmoke": "Four cloud accounts log in; HTTPS and headers; 4 accounts/3 plans/0 memberships/0 classes; no production QA fixtures added",
+  "limitations": [
+    "Free-tier quotas and provider availability apply",
+    "Physical camera, independent browser/accessibility/security review and participant usability acceptance pending",
+    "No cloud restore drill claimed; local backup command does not back up remote SQLite"
+  ],
+  "reports": "Ten-page PDFs remain the local 1.2.2 course baseline; Cloudflare deployment note documents 1.3.0"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "gympassjust",
+  "pages_build_output_dir": "./dist-pages",
+  "compatibility_date": "2026-11-02",
+  "durable_objects": { "bindings": [{ "name": "GYM", "class_name": "GymDatabase", "script_name": "gympassjust-backend" }] },
+  "vars": { "APP_ORIGIN": "https://gympassjust.pages.dev" }
+}

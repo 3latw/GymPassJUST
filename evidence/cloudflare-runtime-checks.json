@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-02T15:36:17.157Z",
+  "runtime": "Local workerd + real SQLite Durable Object; isolated synthetic QA records",
+  "checks": [
+    "Secure local login, wrong-password rejection, public signup cannot create staff, role/CSRF enforcement",
+    "Same-plan duplicate blocked; payment retry safe; full-class FIFO promotion is atomic",
+    "Real QR PNG, assigned instructor scan, duplicate scan safe; missing booking and expired plan rejected",
+    "Background alarm finalizes attendance without browser requests; original end time retained",
+    "100/300 simultaneous booking requests: no overbooking, zero request errors",
+    "Disk-backed restart preserves account IDs, password hashes and classes"
+  ],
+  "load": [
+    {
+      "concurrentMembers": 100,
+      "capacity": 20,
+      "confirmed": 20,
+      "waiting": 80,
+      "errors": 0,
+      "p95Ms": 704.48
+    },
+    {
+      "concurrentMembers": 300,
+      "capacity": 20,
+      "confirmed": 20,
+      "waiting": 280,
+      "errors": 0,
+      "p95Ms": 1688.18
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+
+> gympass-se440@1.3.0 test
+> c8 --include=src/** --reporter=text --reporter=json-summary --reporter=lcov --check-coverage --statements=70 node --test tests/*.test.js
+
+(node:35844) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ existing databases migrate without losing bookings and bootstrap accounts survive restart (2057.2294ms)
+✔ real local registration, credential checks, session rotation, role boundaries and password change (5487.3215ms)
+✔ manager provisions staff and an instructor publishes only their own class for student booking (1705.1588ms)
+✔ Pages serves role deep links and protects forwarding, body limits and response headers (165.7314ms)
+(node:12308) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ QR attendance requires both active subscription and a confirmed booking, throughout the class (1104.7117ms)
+✔ QR attendance rejects a membership that expires or excludes the selected class (42.124ms)
+✔ an active or queued plan cannot be bought twice; retries are idempotent and expiry allows another purchase (35.0611ms)
+✔ only the instructor can submit class QR; manual student check-in endpoints are absent (893.2907ms)
+(node:36732) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ HTTP API, actual OIDC redirects, authorisation, validation and role workflows
+  ✔ unauthenticated and forged CSRF requests fail (19.4145ms)
+  ✔ membership purchases are idempotent and roles cannot choose another owner (24.7909ms)
+  ✔ timetable and capacity booking APIs protect duplicate requests (27.9493ms)
+  ✔ only the assigned instructor scans QR to validate subscription and class booking (334.5638ms)
+  ✔ manager publishes plans and classes with boundary validation (28.3599ms)
+  ✔ member search, notifications, dashboard and audit (32.9793ms)
+✔ HTTP API, actual OIDC redirects, authorisation, validation and role workflows (905.175ms)
+✔ FIFO promotion and its notification are visible through HTTP within one minute (227.3013ms)
+✔ English UI covers role navigation, form errors, dynamic dates, counts and notifications (74.6191ms)
+(node:7356) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ normal startup has plans but no fabricated students, classes or memberships (539.162ms)
+✔ membership QR lasts two full minutes from issuance, even at a minute boundary (6.5203ms)
+✔ assigned instructor and manager can cancel running classes; cancellation is idempotent and not absence (830.2927ms)
+✔ cancelled classes hide 24 hours after cancellation, completed classes 24 hours after end, without deleting history (198.8292ms)
+✔ legacy cleanup removes seed fixtures and keeps registered accounts, purchases and manually published classes (72.1564ms)
+✔ the browser fallback decoder reads the same QR encoding used for signed student passes (258.5473ms)
+(node:33068) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ capacity and FIFO promotion are atomic; duplicate booking is rejected (65.2712ms)
+✔ 48 hour window, expired membership and plan exclusions are enforced (47.2942ms)
+✔ cancellation cutoff is inclusive at two hours and rejects late cancellation (44.2324ms)
+✔ signed student QR records attendance only with a valid subscription and confirmed class booking (41.3151ms)
+✔ FIFO skips expired members and cancellation notifies both confirmed and waiting members (46.4435ms)
+✔ promotion skips a member with an overlapping confirmed class (45.467ms)
+✔ reminders deduplicate; unscanned confirmed bookings become absent at class end (1110.3145ms)
+✔ retention removes old members and their dependent records (365.3868ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10288.5702
+----------------|---------|----------|---------|---------|------------------------------------------
+File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------|---------|----------|---------|---------|------------------------------------------
+All files       |   93.98 |    85.75 |      95 |   93.98 |
+ app.js         |    93.6 |    78.68 |     100 |    93.6 | ...-48,59-62,171-173,367-369,373-378,385
+ auth.js        |   90.47 |    85.91 |   83.33 |   90.47 | 13-18,92-111,287-288,303-308
+ database.js    |     100 |    91.66 |     100 |     100 | 2,39
+ db.js          |     100 |      100 |     100 |     100 |
+ legacy-data.js |     100 |     87.5 |     100 |     100 | 44
+ local-auth.js  |     100 |    94.44 |     100 |     100 | 141,201,206
+ schema.js      |     100 |      100 |     100 |     100 |
+ server.js      |   55.47 |     40.9 |      50 |   55.47 | ...0,42-48,55,57-62,81-92,94-112,131-146
+ service.js     |   98.94 |    93.25 |     100 |   98.94 | 358-362,415-416
+----------------|---------|----------|---------|---------|------------------------------------------

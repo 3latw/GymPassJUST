@@ -1,4 +1,6 @@
-# GymPassJUST API 1.2.2
+# GymPassJUST API 1.3.0
+
+The same API contract runs locally and at https://gympassjust.pages.dev. The cloud deployment uses the shared HTTP/rule modules with persistent Cloudflare SQLite; cloud and local accounts/databases are separate. See Cloudflare_Deployment.md for hosting and background alarms.
 
 Base /api. API routes require private cookie sessions. POST routes require the configured Origin and X-CSRF-Token from /bootstrap. Bodies are limited to16KiB. Roles are member, instructor and manager. Times are integer Unix milliseconds. Errors use {error:{code,message}}; input/business failures422, no session401, role/security403, missing record404, conflict409 and rate limit429.
 

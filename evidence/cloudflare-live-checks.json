@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-02T15:45:50.644Z",
+  "url": "https://gympassjust.pages.dev",
+  "version": "1.3.0",
+  "liveDatabase": "Cloudflare SQLite Durable Object; new cloud accounts, no local database uploaded",
+  "accountChecks": [
+    {
+      "role": "member",
+      "login": true,
+      "emptyTimetable": true
+    },
+    {
+      "role": "member",
+      "login": true,
+      "emptyTimetable": true
+    },
+    {
+      "role": "instructor",
+      "login": true,
+      "emptyTimetable": true
+    },
+    {
+      "role": "manager",
+      "login": true,
+      "emptyTimetable": true
+    }
+  ],
+  "initialCounts": {
+    "accounts": 4,
+    "activeMemberships": 0,
+    "classes": 0,
+    "plans": 3
+  },
+  "apiChecks": [
+    "HTTPS health 1.3.0",
+    "Root HTML and security headers",
+    "Unsigned API rejected",
+    "All four private cloud logins; role checks; actual student QR image",
+    "Live counts: 4 accounts, 3 plans, no fake subscriptions/classes",
+    "Student/instructor/manager deep links and CSS/JavaScript assets return 200"
+  ],
+  "hardwareCameraTested": false,
+  "browserChecks": {
+    "browser": "Codex in-app Chromium",
+    "verified": [
+      "Instructor login on the public URL",
+      "Arabic dashboard and university logo",
+      "Class publishing form loads with date/time fields",
+      "English/Arabic switch on the class form",
+      "Direct role links open after a full request"
+    ],
+    "consoleWarningsAndErrors": [],
+    "viewportInnerWidth": 469,
+    "clientWidth": 454,
+    "pageScrollWidth": 454,
+    "physicalCameraTested": false,
+    "newClassesOrMembershipsCreatedOnLiveSite": false,
+    "screenshot": "evidence/screens/cloudflare-instructor-home.png"
+  },
+  "backendVersionId": "bd85baf5-32ce-4333-a5a6-996456b7bd0b",
+  "pagesDeploymentId": "0f0e40d4"
+}

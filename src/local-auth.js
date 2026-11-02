@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { AppError, fail } from "./service.js";
-import { transaction } from "./db.js";
+import { transaction } from "./database.js";
 
 const derive = promisify(scrypt);
 const parameters = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
@@ -162,7 +162,7 @@ export async function provisionLocalAccounts(db, file, clock) {
   writeFileSync(file.replace(/\.json$/, ".md"), markdown, { mode: 0o600 });
 }
 
-export async function installLocalAuth(app, db, { origin, clock }) {
+export async function installLocalAuth(app, db, { origin, clock, clientAddress }) {
   const cookieOptions = {
     httpOnly: true,
     secure: origin.startsWith("https:"),
@@ -198,7 +198,8 @@ export async function installLocalAuth(app, db, { origin, clock }) {
   function throttle(req, kind, limit) {
     const now = clock();
     db.prepare("DELETE FROM auth_attempts WHERE expires<=?").run(now);
-    const buckets = [[`${kind}:ip:${req.socket.remoteAddress}`, limit]];
+    const address = clientAddress ? clientAddress(req) : req.socket.remoteAddress;
+    const buckets = [[`${kind}:ip:${address}`, limit]];
     if (kind === "login")
       buckets.push([
         `login:account:${digest(

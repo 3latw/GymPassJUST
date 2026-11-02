@@ -1,0 +1,12 @@
+{
+  "name": "gympassjust-backend",
+  "main": "worker.js",
+  "account_id": "f968f6ea5a64280fc338f42737f80df9",
+  "compatibility_date": "2026-11-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "durable_objects": { "bindings": [{ "name": "GYM", "class_name": "GymDatabase" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GymDatabase"] }],
+  "vars": { "APP_ORIGIN": "https://gympassjust.pages.dev" }
+}

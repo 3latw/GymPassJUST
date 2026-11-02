@@ -5,6 +5,10 @@ backups/
 coverage/
 *.log
 accounts/
+dist-pages/
+.wrangler/
+.dev.vars*
+cloudflare/.dev.vars*
 .env.*
 !.env.example
 *.db

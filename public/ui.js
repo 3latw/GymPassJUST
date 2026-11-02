@@ -87,7 +87,7 @@ export function shellMarkup(session, items, roleNames) {
     </div>`;
   return `<div class="shell">
     <aside class="sidebar">${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
-    <small class="sidebar-version">GymPassJUST · 1.2.2</small>
+    <small class="sidebar-version">GymPassJUST · 1.3.0</small>
     </aside>
     <div class="app-body">
     <header class="university-header">${brand()}</header>
@@ -111,7 +111,7 @@ export function shellMarkup(session, items, roleNames) {
     </div>
     <dialog class="menu-dialog" id="menu-panel" aria-label="القائمة الجانبية">
     <button class="menu-close" data-action="close-menu" aria-label="إغلاق القائمة">×</button>${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
-    <small class="sidebar-version">GymPassJUST · 1.2.2</small>
+    <small class="sidebar-version">GymPassJUST · 1.3.0</small>
     </dialog>`;
 }
 export function portalMarkup(session, items, roleNames) {

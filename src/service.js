@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { transaction } from "./db.js";
+import { transaction } from "./database.js";
 
 export class AppError extends Error {
   constructor(code, message, status = 422) {
