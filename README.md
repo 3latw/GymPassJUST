@@ -1,4 +1,4 @@
-# GymPassJUST 1.2
+# GymPassJUST 1.2.1
 
 Arabic/English HTML, CSS and JavaScript, Node 24, Express and persistent SQLite. Start with README_AR.md and docs/Discussion_Summary.pdf.
 
@@ -6,13 +6,13 @@ Arabic/English HTML, CSS and JavaScript, Node 24, Express and persistent SQLite.
 
 Run npm ci --ignore-scripts, then npm start. Open http://localhost:3000. Windows users can double-click Start-GymPass.cmd. Docker users can run docker compose up --build -d after starting Docker Desktop and freeing port3000. Docker execution is not claimed as tested; its engine was unavailable. Local Node and Docker use separate database locations.
 
-The four initial local logins (two students, instructor, manager) are in accounts/initial-accounts.md. Keep the adjacent JSON before first launch to provision the same accounts. Password changes are not overwritten. Initial handover credentials are excluded from Git and public assets. University email/SSO and payment processing are separate; local account emails are identifiers and no email verification service is connected.
+On first launch, the app generates four local logins (two students, instructor, manager) and saves them to accounts/initial-accounts.md on your computer. Keep the adjacent JSON to reuse these initial accounts. These private files are generated locally and are not published in this repository. Password changes are not overwritten. Initial handover credentials are excluded from Git and public assets. University email/SSO and payment processing are separate; local account emails are identifiers and no email verification service is connected.
 
 ## Agreed behavior
 
 The student buys a suitable plan, books a class and shows a signed rotating membership QR. The assigned instructor selects the class and scans this QR during the class. The server requires an active suitable subscription AND a confirmed booking before automatically recording attendance. Missing either condition returns an error and leaves attendance unchanged. Duplicate scans are idempotent. Scans are accepted from class start until end, without a ten-minute cutoff. Unscanned confirmed bookings become absent after class end; no automatic seven-day suspension applies. Reception/security roles and manual attendance routes are removed.
 
-An active or queued plan is marked Subscribed and cannot be bought again until expiry. Booking opens48h before start and cancellation closes2h before start. Capacity, duplicate bookings, overlapping reservations and FIFO promotion are checked transactionally. All purchases are simulated.
+An active or queued plan is marked Subscribed and cannot be bought again until expiry. Booking opens48h before start and student booking cancellation closes2h before start. Capacity, duplicate bookings, overlapping reservations and FIFO promotion are checked transactionally. All purchases are simulated.
 
 The camera uses native BarcodeDetector when available, with local jsQR1.4.0 fallback (Apache-2.0). Camera access needs permission and localhost/HTTPS; paste the QR text for a one-device demo. Image frames stay in the browser. Physical camera hardware was not exercised during automated verification.
 
