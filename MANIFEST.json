@@ -2,7 +2,7 @@
   "project": "GymPassJUST",
   "version": "1.2.1",
   "distribution": "GitHub public source",
-  "sourceCommit": "41ee5dba0a22a4f712181c6ef6ce6e84d9de8931",
+  "sourceCommit": "eb959bd5f420c5f35fce9f9a2aa27fffb403ac23",
   "files": [
     {
       "path": ".dockerignore",
@@ -51,13 +51,13 @@
     },
     {
       "path": "README.md",
-      "sha256": "cb44a045c9d8decc6d974e8348a1e7a6463833a732c6799eba16676549387a34",
-      "bytes": 3576
+      "sha256": "6b062ac7cfa3c2f59dadf76aebf4409aaba7f11150e8ed331cb4ac2029028263",
+      "bytes": 9565
     },
     {
       "path": "README_AR.md",
-      "sha256": "ffcc8037590c0d119cde4c7bf2aa8fe1d01f876b54d28d741d0f173f4192e3ff",
-      "bytes": 5508
+      "sha256": "8b7586fa358e22108b47ab472251fec24dc3947ecb450bd447e75e813f87cae7",
+      "bytes": 9427
     },
     {
       "path": "SPEC.md",

@@ -1,25 +1,138 @@
 # GymPassJUST 1.2.1
 
-Arabic/English HTML, CSS and JavaScript, Node 24, Express and persistent SQLite. Start with README_AR.md and docs/Discussion_Summary.pdf.
+نظام اشتراكات جيم وحجز حصص وتسجيل حضور بالـQR، بواجهة عربي/English وحسابات طالب ومدرب ومدير. يستخدم HTML وCSS وJavaScript مع خادم Node.js وقاعدة SQLite.
 
-## Run
+## التشغيل على Windows — الطريقة الأسهل
 
-Run npm ci --ignore-scripts, then npm start. Open http://localhost:3000. Windows users can double-click Start-GymPass.cmd. Docker users can run docker compose up --build -d after starting Docker Desktop and freeing port3000. Docker execution is not claimed as tested; its engine was unavailable. Local Node and Docker use separate database locations.
+### 1. ثبّت Node.js 24
 
-On first launch, the app generates four local logins (two students, instructor, manager) and saves them to accounts/initial-accounts.md on your computer. Keep the adjacent JSON to reuse these initial accounts. These private files are generated locally and are not published in this repository. Password changes are not overwritten. Initial handover credentials are excluded from Git and public assets. University email/SSO and payment processing are separate; local account emails are identifiers and no email verification service is connected.
+نزّله من [الموقع الرسمي](https://nodejs.org/en/download)، واختر **الإصدار 24** من قائمة الإصدارات ثم Windows Installer المناسب لجهازك. المشروع يحتاج **24.10 أو أحدث ضمن سلسلة 24**.
 
-## Agreed behavior
+بعد التثبيت أغلق Terminal القديم وافتح واحداً جديداً، ثم تحقق:
 
-The student buys a suitable plan, books a class and shows a signed rotating membership QR. The assigned instructor selects the class and scans this QR during the class. The server requires an active suitable subscription AND a confirmed booking before automatically recording attendance. Missing either condition returns an error and leaves attendance unchanged. Duplicate scans are idempotent. Scans are accepted from class start until end, without a ten-minute cutoff. Unscanned confirmed bookings become absent after class end; no automatic seven-day suspension applies. Reception/security roles and manual attendance routes are removed.
+```powershell
+node --version
+npm.cmd --version
+```
 
-An active or queued plan is marked Subscribed and cannot be bought again until expiry. Booking opens48h before start and student booking cancellation closes2h before start. Capacity, duplicate bookings, overlapping reservations and FIFO promotion are checked transactionally. All purchases are simulated.
+يجب أن يبدأ إصدار Node بـ`v24.`. قاعدة SQLite مدمجة؛ لا تحتاج تثبيت برنامج منفصل لها.
 
-The camera uses native BarcodeDetector when available, with local jsQR1.4.0 fallback (Apache-2.0). Camera access needs permission and localhost/HTTPS; paste the QR text for a one-device demo. Image frames stay in the browser. Physical camera hardware was not exercised during automated verification.
+### 2. نزّل المشروع وفك الضغط
 
-## Verify and hand over
+1. من [صفحة المشروع](https://github.com/3latw/GymPassJUST) اضغط **Code → Download ZIP**.
+2. فك الضغط بالكامل باستخدام **Extract All**.
+3. افتح المجلد المستخرج، وغالباً اسمه `GymPassJUST-main`.
+4. تأكد أنك داخل المجلد الذي يحتوي على `package.json` و`Start-GymPass.cmd` و`src` و`public`.
 
-Run npm test, npm run test:load and npm run backup. Raw measured evidence is in evidence/. The QR decoder round-trip test verifies compatibility between encoded passes and jsQR. UI checks verify valid QR attendance, inactive subscription rejection, no-booking rejection and marked plans.
+### 3. شغّل الخادم
 
-The app supports one instance. A real university pilot still needs authorized HTTPS/SSO hosting, off-host backups, actual usability participants, independent WCAG/browser/security checks and real team approvals/contributions. Production configuration remains in compose.production.yaml. The course baseline and the user's final changes are distinguished in the reports.
+اضغط مرتين على **`Start-GymPass.cmd`** بعد فك الضغط. يثبّت الحزم عند الحاجة ثم يشغّل الخادم؛ يحتاج إنترنت عند تثبيت الحزم أول مرة.
 
-Release 1.2.1: assigned instructor and manager cancellation works until class end. Cancelled classes hide 24 hours after cancellation; completed classes hide 24 hours after end, while history remains. QR lifetime is two full minutes with refresh every 30 seconds and on tab return. Normal startup no longer generates members, subscriptions or classes; four local access accounts and three plans remain. Legacy fixture cleanup first saves a SQLite backup and preserves registered accounts, purchases and manually published classes.
+انتظر ظهور الرسالة:
+
+```text
+GymPassJUST ready at http://localhost:3000 | email and password accounts
+```
+
+**اترك نافذة التشغيل مفتوحة طوال استخدام الموقع.**
+
+بدلاً من الضغط على الملف، يمكنك فتح PowerShell داخل المجلد الذي فيه `package.json` وتنفيذ الأمرين بالترتيب:
+
+```powershell
+npm.cmd ci --ignore-scripts
+npm.cmd start
+```
+
+في macOS أو Linux استخدم `npm ci --ignore-scripts` ثم `npm start`.
+
+### 4. افتح الموقع واعرف حسابات الدخول
+
+افتح **[http://localhost:3000](http://localhost:3000)** بعد ظهور رسالة الجاهزية.
+
+عند أول تشغيل، يولّد النظام كلمات مرور ويحفظها على جهازك في:
+
+```text
+accounts/initial-accounts.md
+```
+
+افتح الملف بـNotepad أو أي محرر نصوص، وانسخ الإيميل وكلمة المرور كما هما.
+
+| الحساب | الإيميل | كلمة المرور |
+| --- | --- | --- |
+| المدير | `admin@gympassjust.local` | من الملف المحلي أعلاه |
+| المدرب | `coach@gympassjust.local` | من الملف المحلي أعلاه |
+| طالب 1 | `student1@gympassjust.local` | من الملف المحلي أعلاه |
+| طالب 2 | `student2@gympassjust.local` | من الملف المحلي أعلاه |
+
+**ملف كلمات المرور يُنشأ بعد تشغيل الخادم؛ لا يكون موجوداً على GitHub أو في التنزيل قبل أول تشغيل.** تغيير كلمة المرور من حسابك يبقى محفوظاً في قاعدة البيانات عند إعادة التشغيل.
+
+يمكن إنشاء طالب جديد من زر **إنشاء حساب**، والمدير يستطيع إضافة حسابات من **إدارة الحسابات**. إيميلات المشروع معرّفات دخول محلية؛ لا يوجد إرسال إيميلات أو اتصال بحسابات الجامعة الرسمية.
+
+## كيف تجرّب الحصص والـQR؟
+
+1. ادخل بحساب المدرب وانشر حصة بموعد مستقبلي. الحجز يفتح قبل الحصة بـ48 ساعة.
+2. ادخل بحساب طالب، واشترك بباقة مناسبة، ثم احجز نفس الحصة. الدفع داخل المشروع محاكاة.
+3. عند بدء الحصة، افتح **بطاقة الاشتراك** من حساب الطالب. من حساب المدرب افتح **فحص QR وتسجيل الحضور** واختر الحصة ثم امسح البطاقة. على جهاز واحد يمكنك نسخ نص الرمز من بطاقة الطالب ولصقه في حساب المدرب.
+
+يُسجّل الحضور فقط عند وجود **اشتراك فعّال وحجز مؤكد بنفس الحصة**. المسح متاح من البداية للنهاية؛ المحجوز الذي لا يُمسح رمزه يُحسب غائباً بعد انتهاء الحصة. الرمز صالح لدقيقتين ويتجدد كل 30 ثانية. الكاميرا تحتاج إذن المتصفح وتعمل على `localhost` أو HTTPS.
+
+المدرب يلغي حصته، والمدير يلغي أي حصة، قبل انتهائها. الملغية تختفي من الجدول بعد 24 ساعة من الإلغاء، والمنتهية بعد 24 ساعة من نهايتها، مع حفظ سجل الحجوزات. الباقة الفعالة أو المحجوزة للمستقبل لا تُشترى مرتين.
+
+## الإيقاف والتشغيل مرة ثانية وحفظ البيانات
+
+لإيقاف Node اضغط **Ctrl+C** داخل نافذة التشغيل. لتشغيله لاحقاً افتح `Start-GymPass.cmd` مرة أخرى؛ لا تحتاج تنزيل المشروع من جديد.
+
+الحسابات والاشتراكات والحصص محفوظة في `data/gympass.db`. احتفظ بمجلدي **`data` و`accounts`** عند نقل المشروع أو تحديثه. النسخة الجديدة تبدأ بأربعة حسابات دخول وثلاث باقات، دون اشتراكات أو حصص جاهزة؛ أنشئها من داخل النظام.
+
+## التشغيل بـDocker Desktop — اختياري
+
+هذه طريقة بديلة. ثبّت [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)، وافتحه وانتظر حتى يعمل المحرك. أوقف أي تشغيل آخر للمشروع على المنفذ 3000.
+
+من PowerShell داخل مجلد المشروع نفّذ:
+
+```powershell
+New-Item -ItemType Directory -Path accounts -Force | Out-Null
+docker compose up --build -d
+docker compose logs --tail 30 gympass
+```
+
+بعد ظهور رسالة جاهزية الخادم، افتح [http://localhost:3000](http://localhost:3000). ملف حسابات الدخول سيكون في `accounts/initial-accounts.md` على جهازك أيضاً.
+
+لإيقاف الحاوية:
+
+```powershell
+docker compose down
+```
+
+Docker يحفظ قاعدة البيانات في volume دائم باسم `gympass-data` والنسخ الاحتياطية في `gympass-backups`. بيانات Node وDocker منفصلة ولا تنتقل بينهما تلقائياً. ملفات Docker موجودة، لكن تشغيل الحاوية لم يُختبر في بيئة إعداد هذا التسليم لعدم توفر المحرك.
+
+## حلول سريعة
+
+| المشكلة | الحل |
+| --- | --- |
+| `node is not recognized` | ثبّت Node.js 24 ثم أغلق Terminal وافتحه مجدداً. |
+| `ENOENT` أو عدم العثور على `package.json` | افتح Terminal في المجلد الذي يحتوي على `package.json`. |
+| PowerShell يمنع `npm.ps1` | استخدم `npm.cmd` كما في الأوامر أعلاه، أو افتح `Start-GymPass.cmd`. |
+| `EADDRINUSE` أو المنفذ 3000 مستخدم | أوقف نافذة Node القديمة بـCtrl+C، أو أوقف الحاوية بـ`docker compose down` من مجلد المشروع. شغّل نسخة واحدة فقط. |
+| `localhost refused to connect` | تأكد أن الخادم يعمل ونافذته مفتوحة وأن رسالة الجاهزية ظهرت. |
+| ملف الحسابات غير موجود | شغّل الخادم وانتظر الجاهزية، ثم افتح مجلد المشروع نفسه. |
+| انتهت صلاحية QR | افتح بطاقة الطالب أو اضغط **تحديث البطاقة**، ثم امسح الرمز الجديد أثناء الحصة. |
+
+يحتاج الموقع خادم Node أو حاوية Docker؛ فتح `public/index.html` مباشرة أو استخدام Live Server لا يشغّل التسجيل وقاعدة البيانات. GitHub يحتوي ملفات المشروع، ورابط التشغيل المحلي هو `http://localhost:3000` بعد تشغيل الخادم على جهازك.
+
+## التقارير والاختبارات
+
+- [ملخص المناقشة بالإنجليزي](docs/Discussion_Summary.pdf).
+- [دليل الشرح للأربعة بالعربي](docs/شرح_المشروع_للأربعة.md).
+- [تقرير التخطيط](docs/Part1_Planning_Report.pdf).
+- [التقرير النهائي](docs/Final_Project_Report.pdf).
+- [تقرير الاختبارات](docs/Test_Evidence_Report.pdf).
+
+للتحقق من الكود وقواعد النظام على Windows، من مجلد المشروع:
+
+```powershell
+npm.cmd run check
+npm.cmd test
+```
+
+اختبار ضغط الحجز: `npm.cmd run test:load`. إنشاء نسخة احتياطية واختبار استعادتها: `npm.cmd run backup`. هذه أوامر تطوير وتحقق؛ لا تحتاج تشغيلها في كل مرة تستخدم فيها الموقع.
