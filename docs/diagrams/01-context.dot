@@ -1,0 +1,2 @@
+digraph G {rankdir=TB;graph[bgcolor="white",pad=.25,nodesep=.4,ranksep=.5];node[shape=box,style="rounded,filled",fillcolor="#edf4fa",color="#306284",fontname="Arial",fontsize=12,margin=".18,.12"];edge[fontname="Arial",fontsize=10,color="#526e81"];student[label="Student"];coach[label="Instructor"];manager[label="Manager"];app[label="GymPassJUST
+Memberships, classes and QR attendance"];student->app[label="Buy a plan, book, show QR"];coach->app[label="Publish own class; scan student QR"];manager->app[label="Plans, accounts and reports"];}

@@ -1,0 +1,16 @@
+services:
+  gympass:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      APP_ORIGIN: http://localhost:3000
+      HOST: 0.0.0.0
+    volumes:
+      - gympass-data:/app/data
+      - gympass-backups:/app/backups
+      - ./accounts:/app/accounts
+    restart: unless-stopped
+volumes:
+  gympass-data:
+  gympass-backups:

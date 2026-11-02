@@ -1,0 +1,15 @@
+sequenceDiagram
+ actor Student
+ actor Instructor
+ participant API
+ participant SQLite
+ Student->>Instructor: Show rotating membership QR
+ Instructor->>API: Scan token with selected class ID
+ API->>API: Check instructor, class time and QR signature
+ API->>SQLite: BEGIN IMMEDIATE and require active plan AND booking
+ alt Valid subscription and booking
+ API->>SQLite: Mark checked_in, notify and audit; COMMIT
+ API-->>Instructor: Attendance recorded
+ else Invalid subscription or no confirmed booking
+ API-->>Instructor: Error; attendance unchanged
+ end

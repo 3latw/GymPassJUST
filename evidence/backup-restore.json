@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-31T14:40:17.260Z",
+  "source": "data/gympass.db",
+  "target": "backups/manual-backup.db",
+  "restore": "backups/manual-backup.db.restore-test.db",
+  "integrity": "ok",
+  "counts": {
+    "users": 1514,
+    "classes": 60,
+    "bookings": 1
+  }
+}

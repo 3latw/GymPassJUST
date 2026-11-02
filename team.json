@@ -1,0 +1,10 @@
+{
+  "project": "CSP11 GymPass",
+  "source": "User supplied team screenshot; spelling and individual contributions must be verified by the team",
+  "members": [
+    {"key":"M1","nameAr":"آسيا بسام أحمد قريع","studentId":"","proposedRole":"Project coordination and requirements"},
+    {"key":"M2","nameAr":"مي قسيم محمد الربايعة","studentId":"","proposedRole":"Interface and accessibility"},
+    {"key":"M3","nameAr":"علاء الدين زياد علي الطوالبة","studentId":"","proposedRole":"Backend and database"},
+    {"key":"M4","nameAr":"عدي محمود محمد الحاج","studentId":"","proposedRole":"Testing and operations"}
+  ]
+}

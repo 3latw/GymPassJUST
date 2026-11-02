@@ -1,0 +1,9 @@
+sequenceDiagram
+ participant Scheduler
+ participant SQLite
+ Scheduler->>SQLite: Every minute, BEGIN IMMEDIATE
+ Scheduler->>SQLite: Find classes that have ended
+ Scheduler->>SQLite: checked_in becomes attended
+ Scheduler->>SQLite: Unscanned confirmed becomes no_show
+ Scheduler->>SQLite: Store class end time and notify once
+ Scheduler->>SQLite: Close expired waitlists and COMMIT

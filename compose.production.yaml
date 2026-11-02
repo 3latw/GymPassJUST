@@ -1,0 +1,32 @@
+# Configure the placeholders in a private .env before using this file.
+services:
+  gympass:
+    build: .
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      APP_ORIGIN: https://${DOMAIN:?Set DOMAIN}
+      OIDC_ISSUER: ${OIDC_ISSUER:?Set OIDC_ISSUER}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?Set OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      SIGNING_SECRET: ${SIGNING_SECRET:?Generate at least 32 random characters}
+    volumes:
+      - gympass-data:/app/data
+      - gympass-backups:/app/backups
+    restart: unless-stopped
+  proxy:
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [gympass]
+    restart: unless-stopped
+volumes:
+  gympass-data:
+  gympass-backups:
+  caddy-data:
+  caddy-config:

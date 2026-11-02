@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor Member
+    participant API
+    participant Rules
+    participant SQLite
+    Member->>API: Cancel owned confirmed booking
+    API->>Rules: Authorize and check cutoff
+    Rules->>SQLite: BEGIN IMMEDIATE
+    Rules->>SQLite: Cancel and select FIFO candidate
+    Rules->>Rules: Check membership suspension and overlap
+    Rules->>SQLite: Confirm next eligible member
+    Rules->>SQLite: Insert deduplicated inbox notification
+    Rules->>SQLite: COMMIT
+    API-->>Member: Cancellation confirmed

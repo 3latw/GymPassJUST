@@ -1,0 +1,3 @@
+{$DOMAIN} {
+    reverse_proxy gympass:3000
+}

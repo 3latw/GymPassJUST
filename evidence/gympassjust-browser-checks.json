@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-01",
+  "browser": "Codex in-app Chromium",
+  "interface": "Supplied blue/white university design and logo",
+  "workflows": [
+    "Instructor email/password login",
+    "Instructor publishes future class and it appears in own timetable",
+    "Student 2 sees published class and receives confirmed booking",
+    "Student mobile account drawer",
+    "English schedule text, dates, capacity and controls",
+    "English signup fields and password guidance",
+    "Arabic/English direction switching",
+    "Name/email form values retained on language switch",
+    "English language retained after reload",
+    "Instructor selects running own class and scans eligible student QR: attendance recorded",
+    "Active student with no confirmed class booking: error, no attendance",
+    "Expired subscription: error, no attendance",
+    "Student bookings show checked_in without a manual attendance button",
+    "Active plan card marked Subscribed and its purchase button disabled",
+    "Instructor QR page translates into English",
+    "Instructor cancellation button opens confirmation and cancels class",
+    "Manager cancellation button opens confirmation and cancels class",
+    "Student QR visibly refreshes after32 seconds without clicking refresh",
+    "102-second-old QR accepted and attendance recorded",
+    "Updated QR lifetime text switches Arabic/English"
+  ],
+  "responsiveWidths": [
+    320,
+    360,
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "horizontalOverflowObserved": false,
+  "consoleWarningsOrErrorsObserved": [],
+  "otherBrowserEnginesTested": false,
+  "userContent": "Custom names and titles retain original language",
+  "cameraHardwareTested": false
+}

@@ -1,0 +1,26 @@
+{
+  "name": "gympass-se440",
+  "version": "1.2.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.10.0 <25"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "c8 --include=src/** --reporter=text --reporter=json-summary --reporter=lcov --check-coverage --statements=70 node --test tests/*.test.js",
+    "test:load": "node scripts/load-test.js",
+    "backup": "node scripts/backup.js",
+    "check": "node --check src/server.js && node --check src/service.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "express": "5.1.0",
+    "jose": "6.2.1",
+    "jsqr": "1.4.0",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "c8": "10.1.3",
+    "prettier": "3.6.2"
+  }
+}

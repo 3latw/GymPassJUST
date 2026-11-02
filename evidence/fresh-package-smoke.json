@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-01T18:09:41.527Z",
+  "freshArchive": true,
+  "loginAccounts": 4,
+  "roles": [
+    "member",
+    "member",
+    "instructor",
+    "manager"
+  ],
+  "sqliteIntegrity": "ok",
+  "restartRetainedPasswordHashes": true,
+  "version": "1.2.1",
+  "freshCounts": {
+    "users": 4,
+    "memberships": 0,
+    "classes": 0,
+    "plans": 3
+  },
+  "cleanDefaultDataVerified": true
+}

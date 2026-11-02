@@ -1,0 +1,64 @@
+
+> gympass-se440@1.2.1 test
+> c8 --include=src/** --reporter=text --reporter=json-summary --reporter=lcov --check-coverage --statements=70 node --test tests/*.test.js
+
+(node:20636) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ existing databases migrate without losing bookings and bootstrap accounts survive restart (1802.2243ms)
+✔ real local registration, credential checks, session rotation, role boundaries and password change (4779.5066ms)
+✔ manager provisions staff and an instructor publishes only their own class for student booking (1277.212ms)
+(node:22828) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ QR attendance requires both active subscription and a confirmed booking, throughout the class (1011.954ms)
+✔ QR attendance rejects a membership that expires or excludes the selected class (31.8165ms)
+✔ an active or queued plan cannot be bought twice; retries are idempotent and expiry allows another purchase (27.7405ms)
+✔ only the instructor can submit class QR; manual student check-in endpoints are absent (740.0114ms)
+(node:26068) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+▶ HTTP API, actual OIDC redirects, authorisation, validation and role workflows
+  ✔ unauthenticated and forged CSRF requests fail (14.6495ms)
+  ✔ membership purchases are idempotent and roles cannot choose another owner (20.4665ms)
+  ✔ timetable and capacity booking APIs protect duplicate requests (25.859ms)
+  ✔ only the assigned instructor scans QR to validate subscription and class booking (287.0361ms)
+  ✔ manager publishes plans and classes with boundary validation (38.1079ms)
+  ✔ member search, notifications, dashboard and audit (37.5373ms)
+✔ HTTP API, actual OIDC redirects, authorisation, validation and role workflows (883.0416ms)
+✔ FIFO promotion and its notification are visible through HTTP within one minute (301.6448ms)
+✔ English UI covers role navigation, form errors, dynamic dates, counts and notifications (41.7704ms)
+(node:17032) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ normal startup has plans but no fabricated students, classes or memberships (519.5547ms)
+✔ membership QR lasts two full minutes from issuance, even at a minute boundary (5.597ms)
+✔ assigned instructor and manager can cancel running classes; cancellation is idempotent and not absence (649.7807ms)
+✔ cancelled classes hide 24 hours after cancellation, completed classes 24 hours after end, without deleting history (113.8196ms)
+✔ legacy cleanup removes seed fixtures and keeps registered accounts, purchases and manually published classes (57.2655ms)
+✔ the browser fallback decoder reads the same QR encoding used for signed student passes (233.4176ms)
+(node:29400) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ capacity and FIFO promotion are atomic; duplicate booking is rejected (70.4788ms)
+✔ 48 hour window, expired membership and plan exclusions are enforced (43.0059ms)
+✔ cancellation cutoff is inclusive at two hours and rejects late cancellation (45.2909ms)
+✔ signed student QR records attendance only with a valid subscription and confirmed class booking (65.7503ms)
+✔ FIFO skips expired members and cancellation notifies both confirmed and waiting members (60.3403ms)
+✔ promotion skips a member with an overlapping confirmed class (53.2035ms)
+✔ reminders deduplicate; unscanned confirmed bookings become absent at class end (992.0045ms)
+✔ retention removes old members and their dependent records (309.4719ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8997.7813
+----------------|---------|----------|---------|---------|------------------------------------------
+File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------|---------|----------|---------|---------|------------------------------------------
+All files       |   93.89 |    86.23 |   94.64 |   93.89 |
+ auth.js        |   90.47 |    85.91 |   83.33 |   90.47 | 13-18,92-111,287-288,303-308
+ db.js          |     100 |    96.42 |     100 |     100 | 123
+ legacy-data.js |     100 |     87.5 |     100 |     100 | 44
+ local-auth.js  |     100 |    96.22 |     100 |     100 | 141,205
+ server.js      |   82.59 |    68.75 |      75 |   82.59 | ...8,432-437,444,452-463,465-483,502-517
+ service.js     |   98.93 |     93.1 |     100 |   98.93 | 356-360,413-414
+----------------|---------|----------|---------|---------|------------------------------------------

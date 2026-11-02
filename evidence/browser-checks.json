@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-31",
+  "browser": "Codex in-app Chromium",
+  "widthChecks": [
+    {
+      "documentWidth": 345,
+      "mainWidth": 345,
+      "viewport": 360
+    },
+    {
+      "documentWidth": 753,
+      "mainWidth": 543,
+      "viewport": 768
+    },
+    {
+      "documentWidth": 1009,
+      "mainWidth": 799,
+      "viewport": 1024
+    },
+    {
+      "documentWidth": 1425,
+      "mainWidth": 1185,
+      "viewport": 1440
+    }
+  ],
+  "observedErrors": [],
+  "scenarios": [
+    "member OIDC sign in",
+    "member booking and cancellation confirmation",
+    "member entry QR display",
+    "manager OIDC sign in",
+    "manager dashboard",
+    "manager creation form labels and checked class types",
+    "gate staff view",
+    "member search"
+  ],
+  "limitations": [
+    "Firefox Safari and installed Edge not tested",
+    "No five participant usability study",
+    "Full WCAG audit pending",
+    "Camera permission and hardware scan not exercised"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "mutation": "Invert capacity comparison for confirmation",
+  "test": "capacity and FIFO promotion are atomic",
+  "exitCode": 1,
+  "detected": true,
+  "restoredOriginalSource": true
+}

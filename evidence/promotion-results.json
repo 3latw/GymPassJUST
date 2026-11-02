@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-11-01T18:06:12.335Z",
+  "elapsedMs": 7.99,
+  "limitMs": 60000,
+  "confirmed": true,
+  "notificationVisible": true,
+  "transport": "local HTTP with real cookie sessions"
+}

@@ -1,0 +1,10 @@
+node_modules
+data
+backups
+.git
+coverage
+evidence
+docs
+tests
+accounts
+.env

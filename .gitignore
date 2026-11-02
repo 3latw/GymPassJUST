@@ -1,0 +1,12 @@
+node_modules/
+data/
+backups/
+.env
+coverage/
+*.log
+accounts/
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal

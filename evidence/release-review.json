@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-01",
+  "reviewer": "Codex local implementation and visual review",
+  "independentExternalReview": false,
+  "sourceCommit": "a93ae5c2bc8542a53bd59603bea478c1a8e335c5",
+  "automatedTests": {
+    "reported": 30,
+    "passed": 30,
+    "statementCoverage": 93.89,
+    "branchCoverage": 86.23
+  },
+  "cleanLockedInstall": "npm ci --ignore-scripts --offline completed successfully",
+  "capacityAndLatency": [
+    {
+      "concurrentMembers": 100,
+      "capacity": 20,
+      "confirmed": 20,
+      "waitlisted": 80,
+      "failed": 0,
+      "p95Ms": 366.14,
+      "maxMs": 373.73,
+      "wallMs": 424.99,
+      "passed": true
+    },
+    {
+      "concurrentMembers": 300,
+      "capacity": 20,
+      "confirmed": 20,
+      "waitlisted": 280,
+      "failed": 0,
+      "p95Ms": 689.93,
+      "maxMs": 716.89,
+      "wallMs": 759.12,
+      "passed": true
+    }
+  ],
+  "backupRestore": {
+    "timestamp": "2026-10-31T14:40:17.260Z",
+    "source": "data/gympass.db",
+    "target": "backups/manual-backup.db",
+    "restore": "backups/manual-backup.db.restore-test.db",
+    "integrity": "ok",
+    "counts": {
+      "users": 1514,
+      "classes": 60,
+      "bookings": 1
+    }
+  },
+  "runtimeDependencyVulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "browser": "Actual in-app Chromium flows and widths; see browser-checks.json",
+  "pdfPages": {
+    "Discussion_Summary.pdf": 2,
+    "Final_Project_Report.pdf": 20,
+    "Part1_Planning_Report.pdf": 20,
+    "Test_Evidence_Report.pdf": 2
+  },
+  "pdfGeometry": {
+    "pagesChecked": 42,
+    "outOfBoundsTextPages": 0,
+    "visualReview": "Current PDF bodies, updated diagrams and wireframes rendered and reviewed"
+  },
+  "resolvedDuringReview": [
+    "Fair grace after waitlist promotion",
+    "Skip overlapping waitlisted members",
+    "Date missed attendance by event time after scheduler downtime",
+    "Contain manager table at 360px",
+    "Readable diagrams and table identifiers"
+  ],
+  "docker": "Compose configuration validated; daemon unavailable so image build and container launch not performed",
+  "remainingAcceptance": [
+    "Five real usability participants",
+    "Full independent WCAG security and browser review",
+    "Authorized external OIDC and HTTPS deployment",
+    "Pilot availability observation",
+    "Student IDs spelling actual contribution and sponsor signatures",
+    "Real team repository and TA membership"
+  ],
+  "reportsRevision": {
+    "date": "2026-11-01",
+    "purpose": "Plain English with local accounts, instructor publication and bilingual UI",
+    "applicationCodeChanged": true,
+    "discussionSummaryPages": 2,
+    "arabicGuide": "docs/شرح_المشروع_للأربعة.md"
+  },
+  "reportPages": {
+    "Part1_Planning_Report": 19,
+    "Final_Project_Report": 20,
+    "Test_Evidence_Report": 1,
+    "Discussion_Summary": 2
+  },
+  "localAccounts": {
+    "initialAccounts": 4,
+    "roles": [
+      "student",
+      "instructor",
+      "manager"
+    ],
+    "passwords": "Generated handover file outside Git/public; salted scrypt hashes in SQLite",
+    "universityIntegration": false,
+    "emailVerification": false,
+    "databaseMigrationAndRestart": "Passed isolated disk test"
+  },
+  "runtimeAuditUpdate": "Fresh npm runtime audit on 1 November 2026: zero known vulnerabilities; dependency pins unchanged in 1.2.1; four existing moderate development advisories remain documented",
+  "finalScope": {
+    "attendance": "Assigned instructor scans student QR for selected running class; active suitable subscription AND confirmed booking required",
+    "window": "Class start inclusive to end exclusive; no ten-minute cutoff",
+    "absence": "Unscanned confirmed booking becomes no_show after class end; event time is class end",
+    "manualAttendance": false,
+    "receptionSecurityRoles": false,
+    "duplicateActivePlanPurchase": "Server rejects409; UI marked Subscribed",
+    "cameraHardwareTested": false,
+    "qrDecoderRoundTripTest": true
+  },
+  "lifecycleRevision": {
+    "version": "1.2.1",
+    "classCancellation": "Assigned instructor or manager until class end; idempotent",
+    "timetable": "Cancelled: hide 24h after cancellation; completed: hide 24h after end; history retained",
+    "qr": "120s from issuance; auto refresh every30s and on tab return",
+    "liveData": "No generated students, memberships or classes in normal startup; backup legacy cleanup preserves registered accounts, purchases and custom classes"
+  }
+}
