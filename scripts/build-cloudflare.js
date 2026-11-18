@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 // Use absolute paths: Wrangler resolves relative outdir paths from its config
 // folder, whereas the test runner starts from the project root.
 const result = spawnSync(process.execPath, [
-  resolve("node_modules/wrangler/bin/wrangler.js"), "deploy", "--dry-run",
+  resolve("node_modules/wrangler/bin/wrangler.js"), "deploy", "--dry-run", "--minify",
   "--config", resolve("cloudflare/wrangler.jsonc"),
   "--outdir", resolve(".wrangler/backend-build"),
 ], {
