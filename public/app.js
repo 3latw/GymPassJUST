@@ -1,3 +1,4 @@
+import { classTypeNames as typeNames } from "/class-types.js";
 import { installLanguageSwitcher } from "/i18n.js";
 import {
   icon,
@@ -17,12 +18,6 @@ const roleNames = {
   member: "طالب",
   instructor: "مدرب الحصص",
   manager: "مدير المركز",
-};
-const typeNames = {
-  strength: "قوة وتحمل",
-  yoga: "يوغا",
-  spinning: "دراجات",
-  fitness: "لياقة",
 };
 const stateNames = {
   confirmed: "مؤكد",
@@ -279,8 +274,11 @@ function classCard(gymClass) {
   const artLabels = {
     strength: "POWER",
     yoga: "FLOW",
-    spinning: "RIDE",
     fitness: "MOVE",
+    swimming: "SWIM",
+    cardio: "CARDIO",
+    weightlifting: "LIFT",
+    team_sports: "TEAM",
   };
   const duration = Math.round((gymClass.ends - gymClass.starts) / 60000);
   const waiting = gymClass.waiting ? " · انتظار " + gymClass.waiting : "";

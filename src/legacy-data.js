@@ -29,11 +29,12 @@ export function cleanLegacyDemoData(db) {
         (5 + (i % 10)) * 3600000;
       const c = db
         .prepare(
-          "SELECT * FROM classes WHERE id=? AND type=? AND title=? AND instructor_id=? AND studio=? AND starts=? AND ends=? AND capacity=?",
+          "SELECT * FROM classes WHERE id=? AND type IN (?,?) AND title=? AND instructor_id=? AND studio=? AND starts=? AND ends=? AND capacity=?",
         )
         .get(
           i + 1,
           type,
+          type === "spinning" ? "cardio" : type,
           title,
           `instructor-${1 + (i % 12)}`,
           `استوديو ${1 + (i % 3)}`,

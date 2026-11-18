@@ -1,3 +1,5 @@
+import { classTypes } from "../public/class-types.js";
+
 export function transaction(db, fn) {
   if (db.transactionSync) return db.transactionSync(fn);
   db.exec("BEGIN IMMEDIATE");
@@ -11,33 +13,56 @@ export function transaction(db, fn) {
   }
 }
 
-export function seed(db, now = Date.now(), { demo = false } = {}) {
-  if (!demo) {
-    const plans = [
-      [
-        1,
-        "الاشتراك الشهري",
-        2000,
-        30,
-        '["strength","yoga","spinning","fitness"]',
-      ],
-      [
-        2,
-        "اشتراك الفصل الدراسي",
-        6500,
-        120,
-        '["strength","yoga","spinning","fitness"]',
-      ],
-      [3, "باقة اليوغا", 1500, 30, '["yoga"]'],
-    ];
-    transaction(db, () => {
-      for (const p of plans)
-        db.prepare("INSERT OR IGNORE INTO plans VALUES (?,?,?,?,?)").run(...p);
-    });
-    return;
+function seedPlans(db) {
+  const allTypes = JSON.stringify(classTypes);
+  const insertDefault = db.prepare(
+    "INSERT OR IGNORE INTO plans(id,name,price,days,types) VALUES (?,?,?,?,?)",
+  );
+  insertDefault.run(1, "الاشتراك الشهري", 2000, 30, allTypes);
+  insertDefault.run(2, "اشتراك الفصل الدراسي", 6500, 120, allTypes);
+  insertDefault.run(3, "باقة اليوغا", 1500, 30, '["yoga"]');
+
+  if (db.prepare("SELECT 1 FROM metadata WHERE key='class_catalog_v2'").get()) return;
+
+  // Keep existing plan and class IDs so subscriptions and bookings stay linked.
+  const previousTypes = ["strength", "yoga", "spinning", "fitness"];
+  const updatePlan = db.prepare("UPDATE plans SET types=? WHERE id=?");
+  for (const { id, types } of db.prepare("SELECT id,types FROM plans").all()) {
+    const included = JSON.parse(types);
+    if (!included.includes("spinning")) continue;
+    const wasGeneralPlan =
+      (id === 1 || id === 2) &&
+      included.length === previousTypes.length &&
+      previousTypes.every((type) => included.includes(type));
+    const updated = included.map((type) =>
+      type === "spinning" ? "cardio" : type,
+    );
+    updatePlan.run(
+      wasGeneralPlan ? allTypes : JSON.stringify([...new Set(updated)]),
+      id,
+    );
   }
-  if (db.prepare("SELECT COUNT(*) AS n FROM users").get().n) return;
+  db.prepare("UPDATE classes SET type='cardio' WHERE type='spinning'").run();
+
+  const specialistPlans = [
+    ["باقة القوة ورفع الأثقال", ["strength", "weightlifting"]],
+    ["باقة اللياقة والكارديو", ["fitness", "cardio"]],
+    ["باقة السباحة", ["swimming"]],
+    ["باقة الرياضات الجماعية", ["team_sports"]],
+  ];
+  const insertPlan = db.prepare(
+    "INSERT INTO plans(name,price,days,types) VALUES (?,?,?,?)",
+  );
+  for (const [name, types] of specialistPlans)
+    insertPlan.run(name, 1500, 30, JSON.stringify(types));
+
+  db.prepare("INSERT INTO metadata VALUES ('class_catalog_v2','1')").run();
+}
+
+export function seed(db, now = Date.now(), { demo = false } = {}) {
   transaction(db, () => {
+    seedPlans(db);
+    if (!demo || db.prepare("SELECT COUNT(*) AS n FROM users").get().n) return;
     const user = db.prepare("INSERT INTO users VALUES (?,?,?,?)");
     user.run("manager", "مدير المركز", "manager@demo.just.edu.jo", "manager");
     for (let i = 1; i <= 12; i++)
@@ -54,24 +79,6 @@ export function seed(db, now = Date.now(), { demo = false } = {}) {
         `member${i}@demo.just.edu.jo`,
         "member",
       );
-    db.prepare("INSERT INTO plans VALUES (1,?,?,?,?)").run(
-      "الاشتراك الشهري",
-      2000,
-      30,
-      '["strength","yoga","spinning","fitness"]',
-    );
-    db.prepare("INSERT INTO plans VALUES (2,?,?,?,?)").run(
-      "اشتراك الفصل الدراسي",
-      6500,
-      120,
-      '["strength","yoga","spinning","fitness"]',
-    );
-    db.prepare("INSERT INTO plans VALUES (3,?,?,?,?)").run(
-      "باقة اليوغا",
-      1500,
-      30,
-      '["yoga"]',
-    );
     const membership = db.prepare(
       "INSERT INTO memberships (user_id,plan_id,starts,ends,created) VALUES (?,2,?,?,?)",
     );
@@ -88,7 +95,7 @@ export function seed(db, now = Date.now(), { demo = false } = {}) {
     const types = [
       ["strength", "قوة وتحمل"],
       ["yoga", "يوغا وتوازن"],
-      ["spinning", "دراجات داخلية"],
+      ["cardio", "دراجات داخلية"],
       ["fitness", "لياقة بدنية"],
     ];
     const day = new Date(now);

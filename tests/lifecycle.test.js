@@ -17,9 +17,56 @@ test("normal startup has plans but no fabricated students, classes or membership
         app.db.prepare(`SELECT COUNT(*) n FROM ${table}`).get().n,
         0,
       );
-    assert.equal(app.db.prepare("SELECT COUNT(*) n FROM plans").get().n, 3);
+    const plans = app.db.prepare("SELECT id,types FROM plans ORDER BY id").all();
+    const allTypes = ["yoga", "strength", "fitness", "swimming", "cardio", "weightlifting", "team_sports"];
+    assert.deepEqual(
+      plans.map(({ types }) => JSON.parse(types)),
+      [
+        allTypes,
+        allTypes,
+        ["yoga"],
+        ["strength", "weightlifting"],
+        ["fitness", "cardio"],
+        ["swimming"],
+        ["team_sports"],
+      ],
+    );
   } finally {
     await app.close();
+  }
+});
+
+test("catalog upgrade keeps existing cycling bookings and plan entitlements", () => {
+  const db = openDatabase(":memory:");
+  try {
+    db.exec(`
+      INSERT INTO users VALUES ('coach','Coach','coach@example.com','instructor'),
+        ('student','Student','student@example.com','member');
+      INSERT INTO plans VALUES (1,'الاشتراك الشهري',2000,30,'["strength","yoga","spinning","fitness"]'),
+        (4,'Cycling plan',1200,30,'["spinning"]');
+    `);
+    db.prepare("INSERT INTO classes(id,type,title,instructor_id,studio,starts,ends,capacity) VALUES (1,'spinning','Cycling','coach','Studio',?,?,10)")
+      .run(BASE + HOUR, BASE + 2 * HOUR);
+    const service = createService(db, {
+      clock: () => BASE,
+      secret: "test-secret-longer-than-thirty-two-characters",
+    });
+    const membership = service.buy("student", "student", 4, "cycling-purchase");
+    const booking = service.book("student", 1);
+
+    seed(db, BASE);
+    seed(db, BASE);
+
+    assert.equal(service.getClass(1).type, "cardio");
+    assert.equal(service.getClass(1).title, "Cycling");
+    assert.equal(service.membership("student", BASE, "cardio").id, membership.id);
+    assert.equal(service.one("SELECT state FROM bookings WHERE id=?", booking.id).state, "confirmed");
+    assert.deepEqual(JSON.parse(service.one("SELECT types FROM plans WHERE id=4").types), ["cardio"]);
+    assert.ok(JSON.parse(service.one("SELECT types FROM plans WHERE id=1").types).includes("swimming"));
+    assert.equal(service.one("SELECT COUNT(*) n FROM plans").n, 8);
+    assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(), []);
+  } finally {
+    db.close();
   }
 });
 

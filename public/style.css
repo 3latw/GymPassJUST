@@ -439,10 +439,10 @@ main.content {
   border-color: #e0d2bb;
   border-radius: 40%;
 }
-.class-art.spinning {
+.class-art.cardio {
   background: #e0ebee;
 }
-.class-art.spinning:after {
+.class-art.cardio:after {
   border-color: #bfd4da;
 }
 .class-art.fitness {

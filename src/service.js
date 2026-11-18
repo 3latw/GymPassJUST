@@ -1,4 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { classTypes } from "../public/class-types.js";
 import { transaction } from "./database.js";
 
 export class AppError extends Error {
@@ -517,9 +518,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
     fail(
       !Array.isArray(plan.types) ||
         !plan.types.length ||
-        plan.types.some(
-          (t) => !["strength", "yoga", "spinning", "fitness"].includes(t),
-        ),
+        plan.types.some((type) => !classTypes.includes(type)),
       "INVALID_PLAN",
       "Select supported class types",
     );
@@ -539,7 +538,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
   }
   function saveClass(actorId, gymClass) {
     fail(
-      !["strength", "yoga", "spinning", "fitness"].includes(gymClass.type),
+      !classTypes.includes(gymClass.type),
       "INVALID_CLASS",
       "Invalid class type",
     );

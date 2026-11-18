@@ -193,7 +193,7 @@ test("HTTP API, actual OIDC redirects, authorisation, validation and role workfl
               name: "New Plan",
               price: 1000,
               days: 15,
-              types: ["yoga"],
+              types: ["swimming"],
             })
           ).status,
           201,
@@ -210,14 +210,18 @@ test("HTTP API, actual OIDC redirects, authorisation, validation and role workfl
           422,
         );
         const c = {
-          title: "Test Yoga",
-          type: "yoga",
+          title: "Test Swim",
+          type: "swimming",
           studio: "Test studio",
           instructorId: "instructor-1",
           starts: Date.now() + 30 * 3600000,
           ends: Date.now() + 31 * 3600000,
           capacity: 2,
         };
+        assert.equal(
+          (await manager.api("/classes", "POST", { ...c, type: "spinning" })).status,
+          422,
+        );
         const result = await manager.api("/classes", "POST", c);
         assert.equal(result.status, 201);
         const { id } = await result.json();
