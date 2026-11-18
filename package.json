@@ -11,7 +11,7 @@
     "test": "c8 --include=src/** --reporter=text --reporter=json-summary --reporter=lcov --check-coverage --statements=70 node --test tests/*.test.js",
     "test:load": "node scripts/load-test.js",
     "backup": "node scripts/backup.js",
-    "check": "node --check src/server.js && node --check src/service.js && node --check public/app.js",
+    "check": "node --check src/server.js && node --check src/service.js && node --check public/app.js && node scripts/build-cloudflare.js && node --test tests/cloudflare.integration.js",
     "build:pages": "node scripts/build-pages.js",
     "check:cloudflare": "node --check cloudflare/worker.js && node --check cloudflare/pages-worker.js && node --check cloudflare/database.js",
     "build:cloudflare": "node scripts/build-cloudflare.js",
