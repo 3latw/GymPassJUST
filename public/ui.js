@@ -1,9 +1,9 @@
 export const escapeText = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
-    (c) =>
+    (character) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
+        character
       ],
   );
 const paths = {
@@ -36,36 +36,59 @@ export const icon = (name) =>
 export const brand = () =>
   '<a class="brand" href="/"><img src="/just-logo.png" alt="شعار جامعة العلوم والتكنولوجيا الأردنية"><span><strong lang="en">GymPassJUST</strong><small>جامعة العلوم والتكنولوجيا الأردنية</small></span></a>';
 export function loginMarkup(register, oidc = false) {
+  const title = register ? "إنشاء حساب طالب" : "تسجيل الدخول";
+  let loginContent;
+  if (oidc) {
+    loginContent =
+      '<a class="button auth-submit" href="/auth/login">الدخول بالحساب الجامعي</a>';
+  } else {
+    const formId = register ? "register-form" : "login-form";
+    const passwordAutocomplete = register ? "new-password" : "current-password";
+    const passwordLength = register ? 'minlength="12"' : "";
+    const submitText = register ? "إنشاء الحساب" : "دخول";
+    let nameField = "";
+    let confirmationField = "";
+    let accountLink =
+      'طالب جديد؟ <a href="/register" data-auth="register">إنشاء حساب</a>';
+
+    if (register) {
+      nameField =
+        '<label for="auth-name">الاسم الكامل</label><input id="auth-name" name="name" autocomplete="name" minlength="2" maxlength="100" required>';
+      confirmationField =
+        '<p class="field-hint">12 حرفاً على الأقل. استخدم كلمة مرور خاصة بالمشروع.</p><label for="confirm-password">تأكيد كلمة المرور</label><input id="confirm-password" name="confirmPassword" type="password" dir="ltr" autocomplete="new-password" minlength="12" maxlength="128" required>';
+      accountLink =
+        'عندك حساب؟ <a href="/login" data-auth="login">تسجيل الدخول</a>';
+    }
+
+    loginContent = `<form id="${formId}">${nameField}<label for="auth-email">البريد الإلكتروني</label>
+    <input id="auth-email" name="email" type="email" dir="ltr" autocomplete="username" maxlength="254" required placeholder="name@example.com">
+    <label for="auth-password">كلمة المرور</label>
+    <div class="password-field">
+    <input id="auth-password" name="password" type="password" dir="ltr" autocomplete="${passwordAutocomplete}" ${passwordLength} maxlength="128" required>
+    <button type="button" data-action="toggle-password" aria-label="إظهار كلمة المرور">إظهار</button>
+    </div>${confirmationField}<p id="auth-error" class="form-error" role="alert" hidden>
+    </p>
+    <button type="submit" class="button auth-submit">${submitText}</button>
+    </form>
+    <p class="auth-switch">${accountLink}</p>`;
+  }
+
   return `<main id="main" class="auth-page">
     <header class="auth-brand">${brand()}</header>
     <section class="auth-card">
     <div class="auth-intro">
     <img src="/just-logo.png" alt="" width="88" height="88">
-    <h1>${register ? "إنشاء حساب طالب" : "تسجيل الدخول"}</h1>
+    <h1>${title}</h1>
     <p>المركز الرياضي · جامعة العلوم والتكنولوجيا الأردنية</p>
-    </div>${
-      oidc
-        ? '<a class="button auth-submit" href="/auth/login">الدخول بالحساب الجامعي</a>'
-        : `<form id="${register ? "register-form" : "login-form"}">${register ? '<label for="auth-name">الاسم الكامل</label><input id="auth-name" name="name" autocomplete="name" minlength="2" maxlength="100" required>' : ""}<label for="auth-email">البريد الإلكتروني</label>
-    <input id="auth-email" name="email" type="email" dir="ltr" autocomplete="username" maxlength="254" required placeholder="name@example.com">
-    <label for="auth-password">كلمة المرور</label>
-    <div class="password-field">
-    <input id="auth-password" name="password" type="password" dir="ltr" autocomplete="${register ? "new-password" : "current-password"}" ${register ? 'minlength="12"' : ""} maxlength="128" required>
-    <button type="button" data-action="toggle-password" aria-label="إظهار كلمة المرور">إظهار</button>
-    </div>${register ? '<p class="field-hint">12 حرفاً على الأقل. استخدم كلمة مرور خاصة بالمشروع.</p><label for="confirm-password">تأكيد كلمة المرور</label><input id="confirm-password" name="confirmPassword" type="password" dir="ltr" autocomplete="new-password" minlength="12" maxlength="128" required>' : ""}<p id="auth-error" class="form-error" role="alert" hidden>
-    </p>
-    <button type="submit" class="button auth-submit">${register ? "إنشاء الحساب" : "دخول"}</button>
-    </form>
-    <p class="auth-switch">${register ? 'عندك حساب؟ <a href="/login" data-auth="login">تسجيل الدخول</a>' : 'طالب جديد؟ <a href="/register" data-auth="register">إنشاء حساب</a>'}</p>`
-    }<p class="field-hint auth-note">مشروع المركز الرياضي الجامعي. الحسابات مستقلة عن أنظمة الجامعة الرسمية.</p>
+    </div>${loginContent}<p class="field-hint auth-note">مشروع المركز الرياضي الجامعي. الحسابات مستقلة عن أنظمة الجامعة الرسمية.</p>
     </section>
     <footer class="auth-footer">
     <bdi>GymPassJUST</bdi> · المركز الرياضي الجامعي</footer>
     </main>`;
 }
 export function shellMarkup(session, items, roleNames) {
-  const u = session.user;
-  const nav = () =>
+  const user = session.user;
+  const navigationMarkup = () =>
     `<nav class="nav" aria-label="صفحات النظام">${items
       .map(
         ([
@@ -78,15 +101,15 @@ export function shellMarkup(session, items, roleNames) {
       .join("")}<button data-nav="account">${icon("account")}<span>حسابي</span>
     </button>
     </nav>`;
-  const profile = () =>
+  const profileMarkup = () =>
     `<div class="drawer-profile">
     <span class="profile-avatar">${icon("account")}</span>
-    <strong>${escapeText(u.name)}</strong>
-    <span>${roleNames[u.role]}</span>
-    <bdi>${escapeText(u.email)}</bdi>
+    <strong>${escapeText(user.name)}</strong>
+    <span>${roleNames[user.role]}</span>
+    <bdi>${escapeText(user.email)}</bdi>
     </div>`;
   return `<div class="shell">
-    <aside class="sidebar">${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
+    <aside class="sidebar">${profileMarkup()}${navigationMarkup()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
     <small class="sidebar-version">GymPassJUST · 1.3.0</small>
     </aside>
     <div class="app-body">
@@ -102,7 +125,7 @@ export function shellMarkup(session, items, roleNames) {
     <nav class="bottom-nav" aria-label="التنقل السريع">
     <button data-nav="home">${icon("home")}<span>الرئيسية</span>
     </button>
-    <button data-nav="classes">${icon("inbox")}<span>${u.role === "instructor" ? "حصصي" : "الحصص"}</span>
+    <button data-nav="classes">${icon("inbox")}<span>${user.role === "instructor" ? "حصصي" : "الحصص"}</span>
     </button>
     <button data-nav="inbox">${icon("bell")}<span>الإشعارات</span>
     </button>
@@ -110,12 +133,21 @@ export function shellMarkup(session, items, roleNames) {
     </div>
     </div>
     <dialog class="menu-dialog" id="menu-panel" aria-label="القائمة الجانبية">
-    <button class="menu-close" data-action="close-menu" aria-label="إغلاق القائمة">×</button>${profile()}${nav()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
+    <button class="menu-close" data-action="close-menu" aria-label="إغلاق القائمة">×</button>${profileMarkup()}${navigationMarkup()}<button class="drawer-logout" data-action="logout">${icon("logout")} خروج</button>
     <small class="sidebar-version">GymPassJUST · 1.3.0</small>
     </dialog>`;
 }
 export function portalMarkup(session, items, roleNames) {
   const role = session.user.role;
+  let attendanceButton =
+    '<button class="button attendance-button" data-nav="classes">جدول الحصص</button>';
+  if (role === "member") {
+    attendanceButton =
+      '<button class="button attendance-button" data-nav="pass">عرض بطاقة الاشتراك</button>';
+  } else if (role === "instructor") {
+    attendanceButton =
+      '<button class="button attendance-button" data-nav="verify">فحص QR وتسجيل الحضور</button>';
+  }
   const labels = {
     classes: role === "instructor" ? "حصصي" : "جدول الحصص",
     membership: "الاشتراكات",
@@ -149,9 +181,7 @@ export function portalMarkup(session, items, roleNames) {
           `<button class="service-card" data-nav="${id}">${icon(id)}<span>${labels[id] || label}</span>
     </button>`,
       )
-      .join(
-        "",
-      )}</section>${role === "member" ? '<button class="button attendance-button" data-nav="pass">عرض بطاقة الاشتراك</button>' : role === "instructor" ? '<button class="button attendance-button" data-nav="verify">فحص QR وتسجيل الحضور</button>' : '<button class="button attendance-button" data-nav="classes">جدول الحصص</button>'}`;
+      .join("")}</section>${attendanceButton}`;
 }
 export function classFormMarkup(session, typeNames) {
   return `<section class="panel">
@@ -172,7 +202,7 @@ export function classFormMarkup(session, typeNames) {
       session.user.role === "manager"
         ? `<div>
     <label for="instructor">المدرب</label>
-    <select id="instructor" name="instructorId">${session.instructors.map((i) => `<option value="${escapeText(i.id)}">${escapeText(i.name)}</option>`).join("")}</select>
+    <select id="instructor" name="instructorId">${session.instructors.map((instructor) => `<option value="${escapeText(instructor.id)}">${escapeText(instructor.name)}</option>`).join("")}</select>
     </div>`
         : `<div>
     <label>المدرب</label>
@@ -257,7 +287,7 @@ export function accountsMarkup(rows, roleNames) {
     <div>
     <label for="new-role">نوع الحساب</label>
     <select id="new-role" name="role">${Object.entries(roleNames)
-      .map(([r, label]) => `<option value="${r}">${label}</option>`)
+      .map(([role, label]) => `<option value="${role}">${label}</option>`)
       .join("")}</select>
     </div>
     <div>
@@ -283,12 +313,12 @@ export function accountsMarkup(rows, roleNames) {
     </thead>
     <tbody>${rows
       .map(
-        (u) => `<tr>
-    <td>${escapeText(u.name)}</td>
+        (account) => `<tr>
+    <td>${escapeText(account.name)}</td>
     <td>
-    <bdi>${escapeText(u.email)}</bdi>
+    <bdi>${escapeText(account.email)}</bdi>
     </td>
-    <td>${roleNames[u.role]}</td>
+    <td>${roleNames[account.role]}</td>
     </tr>`,
       )
       .join("")}</tbody>

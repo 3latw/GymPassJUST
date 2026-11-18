@@ -11,27 +11,35 @@ import { dirname } from "node:path";
 import { AppError, fail } from "./service.js";
 import { transaction } from "./database.js";
 
-const derive = promisify(scrypt);
-const parameters = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
+const scryptAsync = promisify(scrypt);
+const scryptOptions = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 };
 const random = () => randomBytes(32).toString("base64url");
-const digest = (s) => createHash("sha256").update(s).digest("hex");
-let deriving = 0;
-async function key(password, salt) {
-  fail(deriving >= 4, "RATE_LIMIT", "Please wait before trying again", 429);
-  deriving++;
+const digest = (value) => createHash("sha256").update(value).digest("hex");
+let activePasswordRequests = 0;
+async function derivePasswordKey(password, salt) {
+  fail(
+    activePasswordRequests >= 4,
+    "RATE_LIMIT",
+    "Please wait before trying again",
+    429,
+  );
+  activePasswordRequests++;
   try {
-    return await derive(password, salt, 64, parameters);
+    return await scryptAsync(password, salt, 64, scryptOptions);
   } finally {
-    deriving--;
+    activePasswordRequests--;
   }
 }
 export async function passwordHash(password) {
   const salt = randomBytes(16).toString("hex");
-  return `scrypt$${salt}$${(await key(password, salt)).toString("hex")}`;
+  return `scrypt$${salt}$${(await derivePasswordKey(password, salt)).toString("hex")}`;
 }
 async function matches(password, stored) {
   const [, salt, hash] = stored.split("$");
-  return timingSafeEqual(await key(password, salt), Buffer.from(hash, "hex"));
+  return timingSafeEqual(
+    await derivePasswordKey(password, salt),
+    Buffer.from(hash, "hex"),
+  );
 }
 function accountInput(data) {
   fail(
@@ -75,7 +83,7 @@ export async function createAccount(
     "An account already uses this email",
     409,
   );
-  const encoded = await passwordHash(data.password);
+  const hashedPassword = await passwordHash(data.password);
   return transaction(db, () => {
     fail(
       db.prepare("SELECT id FROM users WHERE lower(email)=?").get(user.email),
@@ -92,7 +100,7 @@ export async function createAccount(
     );
     db.prepare("INSERT INTO credentials VALUES (?,?,?)").run(
       id,
-      encoded,
+      hashedPassword,
       clock(),
     );
     return { id, ...user, role };
@@ -115,8 +123,9 @@ export async function provisionLocalAccounts(db, file, clock) {
     ["manager", "مدير المركز", "admin@gympassjust.local", "manager", "المدير"],
   ];
   let accounts;
-  if (existsSync(file)) accounts = JSON.parse(readFileSync(file, "utf8"));
-  else {
+  if (existsSync(file)) {
+    accounts = JSON.parse(readFileSync(file, "utf8"));
+  } else {
     accounts = templates.map(([id, name, email, role, label]) => ({
       id,
       name,
@@ -131,24 +140,31 @@ export async function provisionLocalAccounts(db, file, clock) {
       flag: "wx",
     });
   }
-  accounts = accounts.filter((a) =>
-    ["member", "instructor", "manager"].includes(a.role),
+  accounts = accounts.filter((account) =>
+    ["member", "instructor", "manager"].includes(account.role),
   );
   writeFileSync(file, JSON.stringify(accounts, null, 2) + "\n", {
     mode: 0o600,
   });
-  for (const a of accounts) {
-    if (!templates.some(([id]) => id === a.id)) continue;
-    if (db.prepare("SELECT user_id FROM credentials WHERE user_id=?").get(a.id))
+  for (const account of accounts) {
+    if (!templates.some(([id]) => id === account.id)) {
       continue;
-    const encoded = await passwordHash(a.password);
+    }
+    if (
+      db
+        .prepare("SELECT user_id FROM credentials WHERE user_id=?")
+        .get(account.id)
+    ) {
+      continue;
+    }
+    const hashedPassword = await passwordHash(account.password);
     transaction(db, () => {
       db.prepare(
         "INSERT INTO users VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET email=excluded.email",
-      ).run(a.id, a.name, a.email, a.role);
+      ).run(account.id, account.name, account.email, account.role);
       db.prepare("INSERT INTO credentials VALUES (?,?,?)").run(
-        a.id,
-        encoded,
+        account.id,
+        hashedPassword,
         clock(),
       );
     });
@@ -156,13 +172,20 @@ export async function provisionLocalAccounts(db, file, clock) {
   const markdown =
     "# حسابات GymPassJUST المحلية\n\nهذه الحسابات تعمل داخل المشروع على جهازكم، وليست حسابات جامعية رسمية.\n\n| الحساب | الإيميل | كلمة المرور |\n|---|---|---|\n" +
     accounts
-      .map((a) => `| ${a.label} | \`${a.email}\` | \`${a.password}\` |`)
+      .map(
+        (account) =>
+          `| ${account.label} | \`${account.email}\` | \`${account.password}\` |`,
+      )
       .join("\n") +
     "\n\nشغّل Start-GymPass.cmd ثم افتح http://localhost:3000. يمكن إنشاء طالب جديد من صفحة التسجيل. المدير يستطيع إنشاء حسابات الموظفين من إدارة الحسابات. تغيير كلمة المرور من صفحة حسابي. كلمات المرور أعلاه أولية؛ إذا غيرتها لن يتم استبدالها عند إعادة التشغيل.\n";
   writeFileSync(file.replace(/\.json$/, ".md"), markdown, { mode: 0o600 });
 }
 
-export async function installLocalAuth(app, db, { origin, clock, clientAddress }) {
+export async function installLocalAuth(
+  app,
+  db,
+  { origin, clock, clientAddress },
+) {
   const cookieOptions = {
     httpOnly: true,
     secure: origin.startsWith("https:"),
@@ -172,35 +195,42 @@ export async function installLocalAuth(app, db, { origin, clock, clientAddress }
   };
   const dummy = await passwordHash(random());
   function beginSession(req, res, userId) {
-    const old = req.headers.cookie
+    const oldSessionToken = req.headers.cookie
       ?.split(";")
-      .map((x) => x.trim())
-      .find((x) => x.startsWith("gp_session="))
+      .map((cookiePart) => cookiePart.trim())
+      .find((cookiePart) => cookiePart.startsWith("gp_session="))
       ?.slice(11);
-    if (old) db.prepare("DELETE FROM sessions WHERE id=?").run(digest(old));
-    const id = random(),
-      csrf = random();
+    if (oldSessionToken) {
+      db.prepare("DELETE FROM sessions WHERE id=?").run(
+        digest(oldSessionToken),
+      );
+    }
+    const sessionToken = random();
+    const csrfToken = random();
     db.prepare("INSERT INTO sessions VALUES (?,?,?,?)").run(
-      digest(id),
+      digest(sessionToken),
       userId,
-      csrf,
+      csrfToken,
       clock() + cookieOptions.maxAge,
     );
-    res.cookie("gp_session", id, cookieOptions);
+    res.cookie("gp_session", sessionToken, cookieOptions);
   }
   function originCheck(req, res, next) {
-    if (req.headers.origin !== origin)
+    if (req.headers.origin !== origin) {
       return next(
         new AppError("CSRF", "The request could not be verified", 403),
       );
+    }
     next();
   }
   function throttle(req, kind, limit) {
     const now = clock();
     db.prepare("DELETE FROM auth_attempts WHERE expires<=?").run(now);
-    const address = clientAddress ? clientAddress(req) : req.socket.remoteAddress;
+    const address = clientAddress
+      ? clientAddress(req)
+      : req.socket.remoteAddress;
     const buckets = [[`${kind}:ip:${address}`, limit]];
-    if (kind === "login")
+    if (kind === "login") {
       buckets.push([
         `login:account:${digest(
           String(req.body.email || "")
@@ -209,6 +239,7 @@ export async function installLocalAuth(app, db, { origin, clock, clientAddress }
         )}`,
         10,
       ]);
+    }
     for (const [bucket, max] of buckets) {
       db.prepare(
         "INSERT INTO auth_attempts VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET count=count+1",
@@ -323,11 +354,11 @@ export function installAccountRoutes(app, db, { clock, local }) {
       "Current password is incorrect",
       401,
     );
-    const encoded = await passwordHash(req.body.password);
+    const hashedPassword = await passwordHash(req.body.password);
     transaction(db, () => {
       db.prepare(
         "UPDATE credentials SET password_hash=?,updated=? WHERE user_id=?",
-      ).run(encoded, clock(), req.user.id);
+      ).run(hashedPassword, clock(), req.user.id);
       db.prepare("DELETE FROM sessions WHERE user_id=?").run(req.user.id);
     });
     local.beginSession(req, res, req.user.id);

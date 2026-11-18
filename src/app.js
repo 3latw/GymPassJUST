@@ -8,9 +8,16 @@ import { installAuth } from "./auth.js";
 
 // HTTP behavior is shared by the local Node server and Cloudflare runtime.
 // The caller owns database storage, background jobs and initial account setup.
-export async function createHttpApp({ db, origin, secret, clock = Date.now, demo = false, ...options }) {
-  const service = createService(db, { clock, secret }),
-    app = express();
+export async function createHttpApp({
+  db,
+  origin,
+  secret,
+  clock = Date.now,
+  demo = false,
+  ...options
+}) {
+  const service = createService(db, { clock, secret });
+  const app = express();
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     res.set({
@@ -22,30 +29,39 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
         "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
       "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
     });
-    if (origin.startsWith("https:"))
+    if (origin.startsWith("https:")) {
       res.set("Strict-Transport-Security", "max-age=31536000");
+    }
     next();
   });
   const limits = new Map();
   app.use((req, res, next) => {
-    const key = options.clientAddress ? options.clientAddress(req) : req.socket.remoteAddress,
-      now = Date.now(),
-      record = limits.get(key) || { count: 0, until: now + 60000 };
+    const key = options.clientAddress
+      ? options.clientAddress(req)
+      : req.socket.remoteAddress;
+    const now = Date.now();
+    const record = limits.get(key) || { count: 0, until: now + 60000 };
     if (record.until < now) {
       record.count = 0;
       record.until = now + 60000;
     }
     record.count++;
     limits.set(key, record);
-    if (limits.size > 10000)
-      for (const [k, v] of limits) if (v.until < now) limits.delete(k);
-    if (record.count > 2000)
+    if (limits.size > 10000) {
+      for (const [address, requestCount] of limits) {
+        if (requestCount.until < now) {
+          limits.delete(address);
+        }
+      }
+    }
+    if (record.count > 2000) {
       return res.status(429).json({
         error: {
           code: "RATE_LIMIT",
           message: "Too many requests; try again in one minute",
         },
       });
+    }
     next();
   });
   app.use(
@@ -55,14 +71,21 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
   app.get("/health", (req, res) =>
     res.json({ status: "ok", version: "1.3.0" }),
   );
-  if (options.staticDirectory !== false) app.get("/vendor/jsqr.js", (req, res) =>
-    res.sendFile(
-      fileURLToPath(
-        new URL("../node_modules/jsqr/dist/jsQR.js", import.meta.url),
+  if (options.staticDirectory !== false) {
+    app.get("/vendor/jsqr.js", (req, res) =>
+      res.sendFile(
+        fileURLToPath(
+          new URL("../node_modules/jsqr/dist/jsQR.js", import.meta.url),
+        ),
       ),
-    ),
-  );
-  await installAuth(app, db, { origin, demo, clock, clientAddress: options.clientAddress });
+    );
+  }
+  await installAuth(app, db, {
+    origin,
+    demo,
+    clock,
+    clientAddress: options.clientAddress,
+  });
   function allow(...roles) {
     return function checkRole(req, res, next) {
       if (!roles.includes(req.user.role)) {
@@ -77,29 +100,30 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
       next();
     };
   }
-  const id = (value) => {
-    const n = Number(value);
+  function parseId(value) {
+    const recordId = Number(value);
     fail(
-      !Number.isSafeInteger(n) || n < 1,
+      !Number.isSafeInteger(recordId) || recordId < 1,
       "INVALID_ID",
       "Invalid record identifier",
     );
-    return n;
-  };
-  const page = (req) =>
-    Math.max(
-      1,
-      Math.min(10000, Number.parseInt(req.query.page || "1", 10) || 1),
-    );
-  const pageResult = (items, total, p) => ({
-    data: items,
-    pagination: {
-      page: p,
-      pageSize: 50,
-      totalItems: total,
-      totalPages: Math.ceil(total / 50),
-    },
-  });
+    return recordId;
+  }
+  function getPageNumber(req) {
+    const requestedPage = Number.parseInt(req.query.page || "1", 10) || 1;
+    return Math.max(1, Math.min(10000, requestedPage));
+  }
+  function pageResult(items, total, pageNumber) {
+    return {
+      data: items,
+      pagination: {
+        page: pageNumber,
+        pageSize: 50,
+        totalItems: total,
+        totalPages: Math.ceil(total / 50),
+      },
+    };
+  }
   app.get("/api/bootstrap", (req, res) =>
     res.json({
       user: req.user,
@@ -122,7 +146,7 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
     res.json(
       service
         .all("SELECT * FROM plans ORDER BY price")
-        .map((p) => ({ ...p, types: JSON.parse(p.types) })),
+        .map((plan) => ({ ...plan, types: JSON.parse(plan.types) })),
     ),
   );
   app.post("/api/plans", allow("manager"), (req, res) =>
@@ -152,17 +176,17 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
         service.buy(
           req.user.id,
           userId,
-          id(req.body.planId),
+          parseId(req.body.planId),
           `${req.user.id}:${reference}`,
         ),
       );
   });
   app.get("/api/classes", (req, res) => {
-    const p = page(req),
-      params = [clock() - 24 * 3600000],
-      filters = [
-        "CASE WHEN c.state='cancelled' THEN COALESCE(c.cancelled_at,c.ends) ELSE c.ends END>?",
-      ];
+    const pageNumber = getPageNumber(req);
+    const params = [clock() - 24 * 3600000];
+    const filters = [
+      "CASE WHEN c.state='cancelled' THEN COALESCE(c.cancelled_at,c.ends) ELSE c.ends END>?",
+    ];
     if (req.query.type) {
       filters.push("c.type=?");
       params.push(String(req.query.type));
@@ -171,11 +195,11 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
       filters.push("c.instructor_id=?");
       params.push(req.user.id);
     }
-    const where = filters.join(" AND "),
-      total = service.one(
-        `SELECT COUNT(*) n FROM classes c WHERE ${where}`,
-        ...params,
-      ).n;
+    const where = filters.join(" AND ");
+    const total = service.one(
+      `SELECT COUNT(*) n FROM classes c WHERE ${where}`,
+      ...params,
+    ).n;
     const rows = service.all(
       `SELECT c.*,u.name instructor,
       (SELECT COUNT(*) FROM bookings b WHERE b.class_id=c.id AND b.state IN ('confirmed','checked_in','attended')) booked,
@@ -184,9 +208,9 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
       FROM classes c JOIN users u ON u.id=c.instructor_id WHERE ${where} ORDER BY starts LIMIT 50 OFFSET ?`,
       req.user.id,
       ...params,
-      (p - 1) * 50,
+      (pageNumber - 1) * 50,
     );
-    res.json(pageResult(rows, total, p));
+    res.json(pageResult(rows, total, pageNumber));
   });
   app.post("/api/classes", allow("manager", "instructor"), (req, res) => {
     const data = {
@@ -198,25 +222,27 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
   app.post(
     "/api/classes/:id/cancellation",
     allow("manager", "instructor"),
-    (req, res) => res.json(service.cancelClass(req.user, id(req.params.id))),
+    (req, res) =>
+      res.json(service.cancelClass(req.user, parseId(req.params.id))),
   );
   app.get("/api/classes/:id", allow("manager", "instructor"), (req, res) => {
-    const c = service.getClass(id(req.params.id));
+    const gymClass = service.getClass(parseId(req.params.id));
     fail(
-      req.user.role === "instructor" && c.instructor_id !== req.user.id,
+      req.user.role === "instructor" && gymClass.instructor_id !== req.user.id,
       "FORBIDDEN",
       "Only your assigned classes are available",
       403,
     );
-    res.json(c);
+    res.json(gymClass);
   });
   app.get(
     "/api/classes/:id/roster",
     allow("manager", "instructor"),
     (req, res) => {
-      const c = service.getClass(id(req.params.id));
+      const gymClass = service.getClass(parseId(req.params.id));
       fail(
-        req.user.role === "instructor" && c.instructor_id !== req.user.id,
+        req.user.role === "instructor" &&
+          gymClass.instructor_id !== req.user.id,
         "FORBIDDEN",
         "Only your assigned classes are available",
         403,
@@ -224,13 +250,13 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
       res.json(
         service.all(
           "SELECT b.*,u.name,u.email FROM bookings b JOIN users u ON u.id=b.user_id WHERE b.class_id=? ORDER BY b.created,b.id",
-          c.id,
+          gymClass.id,
         ),
       );
     },
   );
   app.post("/api/bookings", allow("member"), (req, res) =>
-    res.status(201).json(service.book(req.user.id, id(req.body.classId))),
+    res.status(201).json(service.book(req.user.id, parseId(req.body.classId))),
   );
   app.get("/api/bookings", (req, res) =>
     res.json(
@@ -243,7 +269,7 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
     ),
   );
   app.post("/api/bookings/:id/cancellation", allow("member"), (req, res) =>
-    res.json(service.cancel(req.user.id, id(req.params.id))),
+    res.json(service.cancel(req.user.id, parseId(req.params.id))),
   );
   app.get("/api/membership-pass", allow("member"), async (req, res) => {
     const token = service.makeToken("membership", req.user.id);
@@ -256,13 +282,17 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
   });
   app.post("/api/class-qr-check-ins", allow("instructor"), (req, res) =>
     res.json(
-      service.scanAttendance(req.user, id(req.body.classId), req.body.token),
+      service.scanAttendance(
+        req.user,
+        parseId(req.body.classId),
+        req.body.token,
+      ),
     ),
   );
   app.get("/api/members", allow("manager"), (req, res) => {
-    const term = String(req.query.q || "").slice(0, 100),
-      p = page(req),
-      pattern = `%${term}%`;
+    const term = String(req.query.q || "").slice(0, 100);
+    const pageNumber = getPageNumber(req);
+    const pattern = `%${term}%`;
     const where = "role='member' AND (name LIKE ? OR email LIKE ? OR id=?)";
     const total = service.one(
       `SELECT COUNT(*) n FROM users WHERE ${where}`,
@@ -278,31 +308,31 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
             pattern,
             pattern,
             term,
-            (p - 1) * 50,
+            (pageNumber - 1) * 50,
           )
-          .map((u) => ({
-            ...u,
-            membership: service.membership(u.id) || null,
+          .map((member) => ({
+            ...member,
+            membership: service.membership(member.id) || null,
           })),
         total,
-        p,
+        pageNumber,
       ),
     );
   });
   app.get("/api/notifications", (req, res) => {
-    const p = page(req);
+    const pageNumber = getPageNumber(req);
     res.json(
       pageResult(
         service.all(
           "SELECT * FROM notifications WHERE user_id=? ORDER BY created DESC,id DESC LIMIT 50 OFFSET ?",
           req.user.id,
-          (p - 1) * 50,
+          (pageNumber - 1) * 50,
         ),
         service.one(
           "SELECT COUNT(*) n FROM notifications WHERE user_id=?",
           req.user.id,
         ).n,
-        p,
+        pageNumber,
       ),
     );
   });
@@ -318,15 +348,15 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
     res.json(service.dashboard()),
   );
   app.get("/api/audit", allow("manager"), (req, res) => {
-    const p = page(req);
+    const pageNumber = getPageNumber(req);
     res.json(
       pageResult(
         service.all(
           "SELECT * FROM audit ORDER BY id DESC LIMIT 50 OFFSET ?",
-          (p - 1) * 50,
+          (pageNumber - 1) * 50,
         ),
         service.one("SELECT COUNT(*) n FROM audit").n,
-        p,
+        pageNumber,
       ),
     );
   });
@@ -336,39 +366,46 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
       .json({ error: { code: "NOT_FOUND", message: "Endpoint not found" } }),
   );
   if (options.staticDirectory !== false) {
-  app.use(
-    express.static(fileURLToPath(new URL("../public", import.meta.url)), {
-      maxAge: 0,
-    }),
-  );
-  app.get(
-    [
-      "/login",
-      "/register",
-      "/student",
-      "/student/:view",
-      "/instructor",
-      "/instructor/:view",
-      "/manager",
-      "/manager/:view",
-      "/account",
-    ],
-    (req, res) =>
-      res.sendFile(
-        fileURLToPath(new URL("../public/index.html", import.meta.url)),
-      ),
-  );
+    app.use(
+      express.static(fileURLToPath(new URL("../public", import.meta.url)), {
+        maxAge: 0,
+      }),
+    );
+    app.get(
+      [
+        "/login",
+        "/register",
+        "/student",
+        "/student/:view",
+        "/instructor",
+        "/instructor/:view",
+        "/manager",
+        "/manager/:view",
+        "/account",
+      ],
+      (req, res) =>
+        res.sendFile(
+          fileURLToPath(new URL("../public/index.html", import.meta.url)),
+        ),
+    );
   }
   app.use((error, req, res, next) => {
-    const known = error instanceof AppError,
-      status = known
-        ? error.status
-        : error.type === "entity.too.large"
-          ? 413
-          : error instanceof SyntaxError
-            ? 400
-            : 500;
-    if (status === 500)
+    const known = error instanceof AppError;
+    let status = 500;
+    let message = "The request failed. Please try again.";
+    let code = "REQUEST_FAILED";
+    if (known) {
+      status = error.status;
+      message = error.message;
+      code = error.code;
+    } else if (error.type === "entity.too.large") {
+      status = 413;
+      message = "Invalid request body";
+    } else if (error instanceof SyntaxError) {
+      status = 400;
+      message = "Invalid request body";
+    }
+    if (status === 500) {
       console.error(
         JSON.stringify({
           event: "request_error",
@@ -376,14 +413,11 @@ export async function createHttpApp({ db, origin, secret, clock = Date.now, demo
           code: error.code || "INTERNAL",
         }),
       );
+    }
     res.status(status).json({
       error: {
-        code: known ? error.code : "REQUEST_FAILED",
-        message: known
-          ? error.message
-          : status === 500
-            ? "The request failed. Please try again."
-            : "Invalid request body",
+        code,
+        message,
       },
     });
   });

@@ -11,9 +11,9 @@ import {
   accountsMarkup,
 } from "/ui.js";
 installLanguageSwitcher();
-const root = document.querySelector("#root"),
-  modal = document.querySelector("#modal"),
-  modalBody = document.querySelector("#modal-body");
+const root = document.querySelector("#root");
+const modal = document.querySelector("#modal");
+const modalBody = document.querySelector("#modal-body");
 const roleNames = {
   member: "طالب",
   instructor: "مدرب الحصص",
@@ -59,18 +59,18 @@ const errors = {
   CSRF: "انتهت صلاحية الطلب. حدّث الصفحة وحاول مرة ثانية.",
   RATE_LIMIT: "طلبات كثيرة. انتظر دقيقة وحاول مجدداً.",
 };
-let session = null,
-  view = "home",
-  authMode = "local",
-  classPage = 1,
-  classFilter = "",
-  listPage = 1,
-  offset = 0,
-  refreshTimer,
-  passExpiresAt = 0,
-  toastTimer,
-  cameraStream,
-  cameraFrame;
+let session = null;
+let view = "home";
+let authMode = "local";
+let classPage = 1;
+let classFilter = "";
+let listPage = 1;
+let offset = 0;
+let refreshTimer;
+let passExpiresAt = 0;
+let toastTimer;
+let cameraStream;
+let cameraFrame;
 const now = () => Date.now() + offset;
 const date = (time, options = {}) =>
   new Intl.DateTimeFormat("ar-JO", {
@@ -90,15 +90,22 @@ const money = (cents) =>
   (cents / 100).toLocaleString("ar-JO", { maximumFractionDigits: 2 }) + " د.أ";
 const button = (text, action, id = "", style = "") =>
   `<button class="button ${style}" data-action="${action}" data-id="${escape(id)}">${text}</button>`;
-const badge = (state) =>
-  `<span class="badge ${state === "waitlisted" ? "warn" : ["no_show", "cancelled"].includes(state) ? "error" : "neutral"}">${escape(stateNames[state] || state)}</span>`;
+function badge(state) {
+  let style = "neutral";
+  if (state === "waitlisted") {
+    style = "warn";
+  } else if (state === "no_show" || state === "cancelled") {
+    style = "error";
+  }
+  return `<span class="badge ${style}">${escape(stateNames[state] || state)}</span>`;
+}
 function toast(message, error = false) {
-  const t = document.querySelector("#toast");
-  t.textContent = message;
-  t.className = error ? "error" : "";
-  t.hidden = false;
+  const toastElement = document.querySelector("#toast");
+  toastElement.textContent = message;
+  toastElement.className = error ? "error" : "";
+  toastElement.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 6500);
+  toastTimer = setTimeout(() => (toastElement.hidden = true), 6500);
 }
 async function api(path, options = {}) {
   const { headers = {}, ...rest } = options;
@@ -172,25 +179,32 @@ function shell() {
   root.innerHTML = shellMarkup(session, navItems(), roleNames);
 }
 function pagePath() {
+  if (view === "account") {
+    return "/account";
+  }
+
   const prefix = {
     member: "student",
     instructor: "instructor",
     manager: "manager",
   }[session.user.role];
-  return view === "account"
-    ? "/account"
-    : "/" + prefix + (view === "home" ? "" : "/" + view);
+  if (view === "home") {
+    return "/" + prefix;
+  }
+  return "/" + prefix + "/" + view;
 }
 function locationView() {
-  const candidate =
-    location.pathname === "/account"
-      ? "account"
-      : location.pathname.split("/")[2] || "home";
-  return [...navItems().map(([id]) => id), "account", "inbox"].includes(
-    candidate,
-  )
-    ? candidate
-    : "home";
+  if (location.pathname === "/account") {
+    return "account";
+  }
+
+  const candidate = location.pathname.split("/")[2] || "home";
+  const availablePages = navItems().map(([id]) => id);
+  availablePages.push("account", "inbox");
+  if (availablePages.includes(candidate)) {
+    return candidate;
+  }
+  return "home";
 }
 async function enterApp() {
   session = await api("/bootstrap");
@@ -205,7 +219,9 @@ window.addEventListener("popstate", () => {
   if (session) {
     view = locationView();
     render();
-  } else login();
+  } else {
+    login();
+  }
 });
 
 const heading = (title, subtitle, extra = "") =>
@@ -302,9 +318,31 @@ function classCard(gymClass) {
     </div>
   </article>`;
 }
-function pager(p, target) {
-  if (p.totalPages <= 1) return "";
-  return `<div class="pagination">${p.page > 1 ? button("السابق", target, p.page - 1, "secondary small") : ""}<span>صفحة ${p.page} من ${p.totalPages}</span>${p.page < p.totalPages ? button("التالي", target, p.page + 1, "secondary small") : ""}</div>`;
+function pager(pagination, target) {
+  if (pagination.totalPages <= 1) {
+    return "";
+  }
+
+  let previousButton = "";
+  let nextButton = "";
+  if (pagination.page > 1) {
+    previousButton = button(
+      "السابق",
+      target,
+      pagination.page - 1,
+      "secondary small",
+    );
+  }
+  if (pagination.page < pagination.totalPages) {
+    nextButton = button(
+      "التالي",
+      target,
+      pagination.page + 1,
+      "secondary small",
+    );
+  }
+
+  return `<div class="pagination">${previousButton}<span>صفحة ${pagination.page} من ${pagination.totalPages}</span>${nextButton}</div>`;
 }
 async function home() {
   return portalMarkup(session, navItems(), roleNames);
@@ -355,14 +393,44 @@ async function classesView() {
   );
 }
 async function bookingsView() {
-  const rows = await api("/bookings");
+  const bookings = await api("/bookings");
+  const title = heading(
+    "حجوزاتي",
+    "الحضور يُسجّل بمسح QR عند المدرب أثناء الحصة. عدم المسح يُحسب غياباً بعد نهايتها.",
+  );
+  if (bookings.length === 0) {
+    return (
+      title + empty("لسه ما عندك حجوزات", "روح لجدول الحصص واحجز أول تمرين.")
+    );
+  }
+
+  const rows = bookings.map((booking) => {
+    // الإلغاء متاح للحجز المؤكد أو الانتظار قبل الحصة بساعتين.
+    const canCancel =
+      ["confirmed", "waitlisted"].includes(booking.state) &&
+      booking.starts - now() >= 2 * 3600000;
+    let action = "—";
+    if (canCancel) {
+      action = button("إلغاء الحجز", "cancel", booking.id, "danger small");
+    }
+    let waitingPosition = "";
+    if (booking.position) {
+      waitingPosition = "<br>ترتيبك " + booking.position;
+    }
+
+    return `<tr>
+    <td>${escape(booking.title)}<br>
+    <small>${escape(booking.instructor)} · ${escape(booking.studio)}</small>
+    </td>
+    <td>${date(booking.starts)}<br>${time(booking.starts)}</td>
+    <td>${badge(booking.state)}${waitingPosition}</td>
+    <td>${action}</td>
+    </tr>`;
+  });
+
   return (
-    heading(
-      "حجوزاتي",
-      "الحضور يُسجّل بمسح QR عند المدرب أثناء الحصة. عدم المسح يُحسب غياباً بعد نهايتها.",
-    ) +
-    (rows.length
-      ? `<div class="table-wrap">
+    title +
+    `<div class="table-wrap">
     <table>
     <thead>
     <tr>
@@ -372,21 +440,9 @@ async function bookingsView() {
     <th>الإجراء</th>
     </tr>
     </thead>
-    <tbody>${rows
-      .map(
-        (b) => `<tr>
-    <td>${escape(b.title)}<br>
-    <small>${escape(b.instructor)} · ${escape(b.studio)}</small>
-    </td>
-    <td>${date(b.starts)}<br>${time(b.starts)}</td>
-    <td>${badge(b.state)}${b.position ? "<br>ترتيبك " + b.position : ""}</td>
-    <td>${["confirmed", "waitlisted"].includes(b.state) && b.starts - now() >= 2 * 3600000 ? button("إلغاء الحجز", "cancel", b.id, "danger small") : "—"}</td>
-    </tr>`,
-      )
-      .join("")}</tbody>
+    <tbody>${rows.join("")}</tbody>
     </table>
     </div>`
-      : empty("لسه ما عندك حجوزات", "روح لجدول الحصص واحجز أول تمرين."))
   );
 }
 async function membershipView() {
@@ -401,27 +457,38 @@ async function membershipView() {
     ) +
     '<section class="plans">' +
     plans
-      .map((p) => {
+      .map((plan) => {
         const subscribed = history.some(
-          (m) => m.plan_id === p.id && m.ends > now(),
+          (subscription) =>
+            subscription.plan_id === plan.id && subscription.ends > now(),
         );
+        const includedClasses = plan.types
+          .map((classType) => "<li>" + typeNames[classType] + "</li>")
+          .join("");
+        let purchaseButton;
+        if (subscribed) {
+          purchaseButton =
+            '<span class="badge neutral">مشترك فيها</span><button class="button" disabled>مشترك بالفعل</button>';
+        } else {
+          purchaseButton = button("اختيار الباقة", "purchase", plan.id);
+        }
         return `<article class="plan ${subscribed ? "subscribed-plan" : ""}">
-    <small>${p.days} يوم</small>
-    <h2>${escape(p.name)}</h2>
-    <div class="price">${money(p.price)}</div>
-    <ul class="check-list">${p.types.map((t) => "<li>" + typeNames[t] + "</li>").join("")}</ul>${subscribed ? '<span class="badge neutral">مشترك فيها</span><button class="button" disabled>مشترك بالفعل</button>' : button("اختيار الباقة", "purchase", p.id)}</article>`;
+    <small>${plan.days} يوم</small>
+    <h2>${escape(plan.name)}</h2>
+    <div class="price">${money(plan.price)}</div>
+    <ul class="check-list">${includedClasses}</ul>${purchaseButton}</article>`;
       })
       .join("") +
     '</section><section class="panel"><h2>سجل العضويات</h2>' +
     history
       .map(
-        (m) =>
+        (subscription) =>
           "<p><strong>" +
-          escape(m.name) +
+          escape(subscription.name) +
           "</strong> — " +
-          date(m.starts) +
+          date(subscription.starts) +
           " — " +
-          date(m.ends, { year: "numeric" }) +
+          date(subscription.ends, { year: "numeric" }) +
           "</p>",
       )
       .join("") +
@@ -460,11 +527,13 @@ async function passView() {
   );
 }
 async function verifyView() {
-  const result = await api("/classes"),
-    classes = result.data.filter(
-      (c) => c.state === "published" && c.ends > now(),
-    );
-  const current = classes.find((c) => c.starts <= now() && c.ends > now())?.id;
+  const result = await api("/classes");
+  const classes = result.data.filter(
+    (gymClass) => gymClass.state === "published" && gymClass.ends > now(),
+  );
+  const currentClassId = classes.find(
+    (gymClass) => gymClass.starts <= now() && gymClass.ends > now(),
+  )?.id;
   return (
     heading(
       "فحص QR وتسجيل الحضور",
@@ -476,7 +545,7 @@ async function verifyView() {
       classes.length
         ? `<form id="verify-form">
     <label for="verify-class">الحصة المختارة</label>
-    <select id="verify-class" name="classId" required>${classes.map((c) => `<option value="${c.id}" ${c.id === current ? "selected" : ""}>${escape(c.title)} — ${date(c.starts)} ${time(c.starts)}</option>`).join("")}</select>
+    <select id="verify-class" name="classId" required>${classes.map((gymClass) => `<option value="${gymClass.id}" ${gymClass.id === currentClassId ? "selected" : ""}>${escape(gymClass.title)} — ${date(gymClass.starts)} ${time(gymClass.starts)}</option>`).join("")}</select>
     <label for="verify-token">رمز بطاقة الطالب</label>
     <textarea id="verify-token" name="token" dir="ltr" rows="4" required placeholder="الصق الرمز أو استخدم الكاميرا"></textarea>
     <div class="form-actions">
@@ -504,12 +573,12 @@ async function inboxView() {
     (rows.data.length
       ? `<section class="panel">${rows.data
           .map(
-            (n) => `<article class="activity">
+            (notification) => `<article class="activity">
     <span class="activity-dot" aria-hidden="true">
     </span>
     <div>
-    <p>${escape(n.message)}</p>
-    <small>${date(n.created)} · ${time(n.created)} ${n.read_at ? "" : "· جديد"}</small>
+    <p>${escape(notification.message)}</p>
+    <small>${date(notification.created)} · ${time(notification.created)} ${notification.read_at ? "" : "· جديد"}</small>
     </div>
     </article>`,
           )
@@ -521,19 +590,21 @@ async function inboxView() {
   );
 }
 async function dashboard() {
-  const d = await api("/dashboard");
-  const weekly = d.weekly
-    .map((w) => {
-      const cap =
-        d.capacityByWeek.find((c) => c.week === w.week && c.type === w.type)
-          ?.capacity || 0;
+  const report = await api("/dashboard");
+  const weekly = report.weekly
+    .map((week) => {
+      const capacity =
+        report.capacityByWeek.find(
+          (capacityRow) =>
+            capacityRow.week === week.week && capacityRow.type === week.type,
+        )?.capacity || 0;
       return `<tr>
     <td>
-    <bdi>${escape(w.week)}</bdi>
+    <bdi>${escape(week.week)}</bdi>
     </td>
-    <td>${typeNames[w.type]}</td>
-    <td>${w.classes}</td>
-    <td>${cap ? Math.round((w.allocated / cap) * 100) : 0}%</td>
+    <td>${typeNames[week.type]}</td>
+    <td>${week.classes}</td>
+    <td>${capacity ? Math.round((week.allocated / capacity) * 100) : 0}%</td>
     </tr>`;
     })
     .join("");
@@ -542,7 +613,7 @@ async function dashboard() {
       "المركز بنظرة واحدة",
       "مؤشرات العضوية والحجز من بيانات النظام الحالية.",
     ) +
-    `<section class="stats">${stat("الأعضاء الفعالون", d.activeMembers, "عضويات صالحة الآن")}${stat("الحجوزات القادمة", d.confirmed, "حجز مؤكد")}${stat("بانتظار مكان", d.waitlisted, "طلب على قوائم الانتظار")}</section>
+    `<section class="stats">${stat("الأعضاء الفعالون", report.activeMembers, "عضويات صالحة الآن")}${stat("الحجوزات القادمة", report.confirmed, "حجز مؤكد")}${stat("بانتظار مكان", report.waitlisted, "طلب على قوائم الانتظار")}</section>
     <section class="split">
     <div class="panel">
     <h2>إشغال الحصص</h2>
@@ -562,13 +633,13 @@ async function dashboard() {
     </div>
     <div class="panel">
     <h2>العضويات حسب الباقة</h2>
-    <div class="bar-chart">${d.activeByPlan
+    <div class="bar-chart">${report.activeByPlan
       .map(
-        (p) => `<div class="bar-row">
-    <span>${escape(p.name)}</span>
-    <meter min="0" max="${Math.max(1, d.activeMembers)}" value="${p.count}" aria-label="${escape(p.name)}">
+        (plan) => `<div class="bar-row">
+    <span>${escape(plan.name)}</span>
+    <meter min="0" max="${Math.max(1, report.activeMembers)}" value="${plan.count}" aria-label="${escape(plan.name)}">
     </meter>
-    <strong>${p.count}</strong>
+    <strong>${plan.count}</strong>
     </div>`,
       )
       .join("")}</div>
@@ -620,10 +691,10 @@ async function manage() {
   );
 }
 async function auditView() {
-  const r = await api("/audit?page=" + listPage);
+  const result = await api("/audit?page=" + listPage);
   return (
     heading("سجل التدقيق", "تغييرات العضوية والجدول وسجل قرارات الإدارة.") +
-    (r.data.length
+    (result.data.length
       ? `<div class="table-wrap">
     <table>
     <thead>
@@ -635,25 +706,25 @@ async function auditView() {
     <th>التفاصيل</th>
     </tr>
     </thead>
-    <tbody>${r.data
+    <tbody>${result.data
       .map(
-        (a) => `<tr>
-    <td>${date(a.created)}<br>${time(a.created)}</td>
+        (entry) => `<tr>
+    <td>${date(entry.created)}<br>${time(entry.created)}</td>
     <td>
-    <bdi>${escape(a.actor)}</bdi>
+    <bdi>${escape(entry.actor)}</bdi>
     </td>
     <td>
-    <bdi>${escape(a.action)}</bdi>
+    <bdi>${escape(entry.action)}</bdi>
     </td>
     <td>
-    <bdi>${escape(a.target)}</bdi>
+    <bdi>${escape(entry.target)}</bdi>
     </td>
-    <td>${escape(a.detail)}</td>
+    <td>${escape(entry.detail)}</td>
     </tr>`,
       )
       .join("")}</tbody>
     </table>
-    </div>${pager(r.pagination, "list-page")}`
+    </div>${pager(result.pagination, "list-page")}`
       : empty("السجل فارغ", "ستظهر هنا العمليات التي يجريها المستخدمون."))
   );
 }
@@ -675,9 +746,13 @@ const views = {
 };
 let renderSerial = 0;
 async function render(moveFocus = false) {
-  if (!session) return;
+  if (!session) {
+    return;
+  }
   const serial = ++renderSerial;
-  if (moveFocus) history.pushState({}, "", pagePath());
+  if (moveFocus) {
+    history.pushState({}, "", pagePath());
+  }
   const title =
     navItems().find(([id]) => id === view)?.[2] ||
     (view === "account" ? "حسابي" : "الإشعارات");
@@ -687,28 +762,36 @@ async function render(moveFocus = false) {
   clearTimeout(refreshTimer);
   const main = document.querySelector("#main");
   main.setAttribute("aria-busy", "true");
-  document.querySelectorAll("[data-nav]").forEach((n) => {
-    n.classList.toggle("active", n.dataset.nav === view);
-    if (n.dataset.nav === view) n.setAttribute("aria-current", "page");
-    else n.removeAttribute("aria-current");
+  document.querySelectorAll("[data-nav]").forEach((navButton) => {
+    navButton.classList.toggle("active", navButton.dataset.nav === view);
+    if (navButton.dataset.nav === view) {
+      navButton.setAttribute("aria-current", "page");
+    } else {
+      navButton.removeAttribute("aria-current");
+    }
   });
   try {
     const html = await (views[view] || home)();
-    if (serial !== renderSerial) return;
+    if (serial !== renderSerial) {
+      return;
+    }
     main.innerHTML = html;
     main.removeAttribute("aria-busy");
-    if (moveFocus) main.focus();
-    if (view === "pass" || view === "classes")
+    if (moveFocus) {
+      main.focus();
+    }
+    if (view === "pass" || view === "classes") {
       refreshTimer = setTimeout(
         () => render(),
         view === "pass"
           ? Math.max(1000, Math.min(30000, passExpiresAt - now() - 30000))
           : 60000,
       );
-  } catch (e) {
+    }
+  } catch (error) {
     main.removeAttribute("aria-busy");
     main.innerHTML =
-      empty("تعذر تحميل الصفحة", escape(e.message)) +
+      empty("تعذر تحميل الصفحة", escape(error.message)) +
       button("حاول مجدداً", "refresh");
   }
 }
@@ -722,17 +805,46 @@ async function refreshSession() {
   document.querySelector("#unread").textContent = session.unread || "";
 }
 async function roster(id) {
-  const [rows, c] = await Promise.all([
+  const [bookings, gymClass] = await Promise.all([
     api(`/classes/${id}/roster`),
     api(`/classes/${id}`),
   ]);
-  showModal(
-    `<h2>المسجلون في الحصة</h2>${c.state === "published" && c.ends > now() ? button("إلغاء الحصة", "cancel-class", id, "danger") : badge(c.state === "cancelled" ? "cancelled" : "attended")}${rows.length ? '<div class="table-wrap"><table><thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الحالة</th></tr></thead><tbody>' + rows.map((b) => "<tr><td>" + escape(b.name) + "</td><td><bdi>" + escape(b.email) + "</bdi></td><td>" + badge(b.state) + "</td></tr>").join("") + "</tbody></table></div>" : empty("لا توجد حجوزات", "لم يسجل أعضاء في هذه الحصة.")}`,
-  );
+  let classAction;
+  if (gymClass.state === "published" && gymClass.ends > now()) {
+    classAction = button("إلغاء الحصة", "cancel-class", id, "danger");
+  } else if (gymClass.state === "cancelled") {
+    classAction = badge("cancelled");
+  } else {
+    classAction = badge("attended");
+  }
+
+  let bookingList = empty("لا توجد حجوزات", "لم يسجل أعضاء في هذه الحصة.");
+  if (bookings.length > 0) {
+    const rows = bookings
+      .map(
+        (booking) =>
+          "<tr><td>" +
+          escape(booking.name) +
+          "</td><td><bdi>" +
+          escape(booking.email) +
+          "</bdi></td><td>" +
+          badge(booking.state) +
+          "</td></tr>",
+      )
+      .join("");
+    bookingList =
+      '<div class="table-wrap"><table><thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>الحالة</th></tr></thead><tbody>' +
+      rows +
+      "</tbody></table></div>";
+  }
+
+  showModal(`<h2>المسجلون في الحصة</h2>${classAction}${bookingList}`);
 }
 async function purchase(planId, userId) {
-  const plans = await api("/plans"),
-    plan = plans.find((p) => p.id === Number(planId));
+  const plans = await api("/plans");
+  const plan = plans.find(
+    (availablePlan) => availablePlan.id === Number(planId),
+  );
   showModal(
     `<h2>تأكيد الاشتراك</h2>
     <p>${escape(plan.name)} — ${money(plan.price)} لمدة ${plan.days} يوم.</p>
@@ -740,46 +852,48 @@ async function purchase(planId, userId) {
     <button class="button" data-action="confirm-purchase" data-id="${plan.id}" data-user="${escape(userId || "")}" data-key="${crypto.randomUUID()}">تأكيد الدفع التجريبي</button>`,
   );
 }
-async function memberSearch(query, p = 1) {
-  const r = await api("/members?q=" + encodeURIComponent(query) + "&page=" + p),
-    target = document.querySelector("#member-results");
-  target.dataset.query = query;
-  target.innerHTML = r.data.length
+async function memberSearch(query, pageNumber = 1) {
+  const result = await api(
+    "/members?q=" + encodeURIComponent(query) + "&page=" + pageNumber,
+  );
+  const resultsElement = document.querySelector("#member-results");
+  resultsElement.dataset.query = query;
+  resultsElement.innerHTML = result.data.length
     ? '<div class="table-wrap"><table><thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>العضوية</th></tr></thead><tbody>' +
-      r.data
+      result.data
         .map(
-          (u) =>
+          (member) =>
             "<tr><td>" +
-            escape(u.name) +
+            escape(member.name) +
             "</td><td><bdi>" +
-            escape(u.email) +
+            escape(member.email) +
             "</bdi></td><td>" +
-            (u.membership
-              ? "فعالة حتى " + date(u.membership.ends)
+            (member.membership
+              ? "فعالة حتى " + date(member.membership.ends)
               : "غير فعالة") +
             "</td></tr>",
         )
         .join("") +
       "</tbody></table></div>" +
-      pager(r.pagination, "member-page")
+      pager(result.pagination, "member-page")
     : empty("لا توجد نتائج", "جرّب اسم أو بريد آخر.");
 }
-root.addEventListener("change", (e) => {
-  if (e.target.id === "class-type") {
-    classFilter = e.target.value;
+root.addEventListener("change", (event) => {
+  if (event.target.id === "class-type") {
+    classFilter = event.target.value;
     classPage = 1;
     render();
   }
 });
-document.addEventListener("click", async (e) => {
-  const authLink = e.target.closest("[data-auth]");
+document.addEventListener("click", async (event) => {
+  const authLink = event.target.closest("[data-auth]");
   if (authLink) {
-    e.preventDefault();
+    event.preventDefault();
     history.pushState({}, "", authLink.href);
     login();
     return;
   }
-  const nav = e.target.closest("[data-nav]");
+  const nav = event.target.closest("[data-nav]");
   if (nav) {
     document.querySelector("#menu-panel")?.close();
     view = nav.dataset.nav;
@@ -787,17 +901,19 @@ document.addEventListener("click", async (e) => {
     await render(true);
     return;
   }
-  const target = e.target.closest("[data-action]");
-  if (!target) return;
-  const action = target.dataset.action,
-    id = target.dataset.id;
+  const target = event.target.closest("[data-action]");
+  if (!target) {
+    return;
+  }
+  const action = target.dataset.action;
+  const id = target.dataset.id;
   target.disabled = true;
   try {
-    if (action === "open-menu")
+    if (action === "open-menu") {
       document.querySelector("#menu-panel").showModal();
-    else if (action === "close-menu")
+    } else if (action === "close-menu") {
       document.querySelector("#menu-panel").close();
-    else if (action === "toggle-password") {
+    } else if (action === "toggle-password") {
       const input = document.querySelector("#auth-password");
       input.type = input.type === "password" ? "text" : "password";
       target.textContent = input.type === "password" ? "إظهار" : "إخفاء";
@@ -822,8 +938,9 @@ document.addEventListener("click", async (e) => {
       modal.close();
       toast("تم إلغاء الحجز.");
       await render();
-    } else if (action === "purchase") await purchase(id);
-    else if (action === "confirm-purchase") {
+    } else if (action === "purchase") {
+      await purchase(id);
+    } else if (action === "confirm-purchase") {
       await post(
         "/memberships",
         {
@@ -842,23 +959,25 @@ document.addEventListener("click", async (e) => {
     } else if (action === "list-page") {
       listPage = Number(id);
       await render(true);
-    } else if (action === "member-page")
+    } else if (action === "member-page") {
       await memberSearch(
         document.querySelector("#member-results").dataset.query,
         Number(id),
       );
-    else if (action === "read") {
+    } else if (action === "read") {
       await post("/notifications/read");
       await refreshSession();
       await render();
-    } else if (action === "refresh") await render();
-    else if (action === "copy-token") {
+    } else if (action === "refresh") {
+      await render();
+    } else if (action === "copy-token") {
       await navigator.clipboard.writeText(
         document.querySelector("#pass-token").value,
       );
       toast("تم نسخ الرمز.");
-    } else if (action === "roster") await roster(id);
-    else if (action === "cancel-class") {
+    } else if (action === "roster") {
+      await roster(id);
+    } else if (action === "cancel-class") {
       modalBody.innerHTML = `<h2>تأكيد إلغاء الحصة</h2>
     <p>سيتم إلغاء الحجوزات وإشعار جميع المسجلين.</p>${button("تأكيد إلغاء الحصة", "confirm-class-cancel", id, "danger")}`;
     } else if (action === "confirm-class-cancel") {
@@ -866,16 +985,21 @@ document.addEventListener("click", async (e) => {
       modal.close();
       toast("أُلغيت الحصة وأُرسلت الإشعارات.");
       await render();
-    } else if (action === "camera") await startCamera();
-    else if (action === "camera-stop") stopCamera();
+    } else if (action === "camera") {
+      await startCamera();
+    } else if (action === "camera-stop") {
+      stopCamera();
+    }
   } catch (error) {
     toast(error.message, true);
   } finally {
-    if (target.isConnected) target.disabled = false;
+    if (target.isConnected) {
+      target.disabled = false;
+    }
   }
 });
-document.addEventListener("submit", async (e) => {
-  const form = e.target;
+document.addEventListener("submit", async (event) => {
+  const form = event.target;
   if (
     ![
       "login-form",
@@ -887,16 +1011,23 @@ document.addEventListener("submit", async (e) => {
       "class-form",
       "plan-form",
     ].includes(form.id)
-  )
+  ) {
     return;
-  e.preventDefault();
+  }
+  event.preventDefault();
   const submit = form.querySelector('button[type="submit"],button:not([type])');
-  if (submit) submit.disabled = true;
+  if (submit) {
+    submit.disabled = true;
+  }
   const data = Object.fromEntries(new FormData(form));
   try {
     if (["login-form", "register-form"].includes(form.id)) {
-      if (form.id === "register-form" && data.password !== data.confirmPassword)
+      if (
+        form.id === "register-form" &&
+        data.password !== data.confirmPassword
+      ) {
         throw new Error("كلمتا المرور غير متطابقتين.");
+      }
       const response = await fetch(
         "/auth/local/" + (form.id === "register-form" ? "register" : "login"),
         {
@@ -906,16 +1037,18 @@ document.addEventListener("submit", async (e) => {
         },
       );
       const result = await response.json();
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error(
           errors[result.error?.code] || "تعذر تسجيل الدخول. حاول مرة أخرى.",
         );
+      }
       await enterApp();
       return;
     }
     if (form.id === "password-form") {
-      if (data.password !== data.confirmPassword)
+      if (data.password !== data.confirmPassword) {
         throw new Error("كلمتا المرور غير متطابقتين.");
+      }
       await post("/account/password", data);
       await refreshSession();
       form.reset();
@@ -930,21 +1063,23 @@ document.addEventListener("submit", async (e) => {
       stopCamera();
       document.querySelector("#verify-result").innerHTML =
         "<p>جارٍ فحص QR وتسجيل الحضور…</p>";
-      const r = await post("/class-qr-check-ins", {
+      const attendance = await post("/class-qr-check-ins", {
         ...data,
         classId: Number(data.classId),
       });
       document.querySelector("#verify-result").innerHTML =
-        `<div class="notice ${r.allowed ? "" : "error"}">
-    <h2>${escape(r.message)}</h2>
-    <strong>${escape(r.member.name)}</strong>
+        `<div class="notice ${attendance.allowed ? "" : "error"}">
+    <h2>${escape(attendance.message)}</h2>
+    <strong>${escape(attendance.member.name)}</strong>
     <p>
-    <bdi>${escape(r.member.email)}</bdi>
-    </p>${[r.membership].map((m) => "<p>" + escape(m.name) + " — صالحة حتى " + date(m.ends, { year: "numeric" }) + "</p>").join("")}</div>`;
+    <bdi>${escape(attendance.member.email)}</bdi>
+    </p><p>${escape(attendance.membership.name)} — صالحة حتى ${date(attendance.membership.ends, { year: "numeric" })}</p></div>`;
       form.reset();
       form.elements.classId.value = data.classId;
     }
-    if (form.id === "member-search") await memberSearch(data.q);
+    if (form.id === "member-search") {
+      await memberSearch(data.q);
+    }
     if (form.id === "class-form") {
       await post("/classes", {
         ...data,
@@ -970,23 +1105,30 @@ document.addEventListener("submit", async (e) => {
       await render();
     }
   } catch (error) {
-    if (form.id === "verify-form")
+    if (form.id === "verify-form") {
       document.querySelector("#verify-result").innerHTML =
         '<div class="notice error">' + escape(error.message) + "</div>";
+    }
     const inline = form.querySelector("#auth-error, #class-error");
     if (inline) {
       inline.textContent = error.message;
       inline.hidden = false;
-    } else toast(error.message, true);
+    } else {
+      toast(error.message, true);
+    }
   } finally {
-    if (submit?.isConnected) submit.disabled = false;
+    if (submit?.isConnected) {
+      submit.disabled = false;
+    }
   }
 });
 function stopCamera() {
   const video = document.querySelector("#camera");
-  if (video) video.hidden = true;
+  if (video) {
+    video.hidden = true;
+  }
   cancelAnimationFrame(cameraFrame);
-  cameraStream?.getTracks().forEach((t) => t.stop());
+  cameraStream?.getTracks().forEach((track) => track.stop());
   cameraStream = null;
 }
 async function startCamera() {
@@ -1001,22 +1143,25 @@ async function startCamera() {
   const video = document.querySelector("#camera");
   video.hidden = false;
   video.srcObject = cameraStream;
-  const native =
+  const qrDetector =
     "BarcodeDetector" in window
       ? new BarcodeDetector({ formats: ["qr_code"] })
       : null;
-  const canvas = document.createElement("canvas"),
-    context = canvas.getContext("2d", { willReadFrequently: true });
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
   let lastScan = 0;
-  async function scan(stamp) {
-    if (!cameraStream) return;
-    if (video.readyState >= 2 && stamp - lastScan > 140) {
-      lastScan = stamp;
+  async function scan(frameTime) {
+    if (!cameraStream) {
+      return;
+    }
+    if (video.readyState >= 2 && frameTime - lastScan > 140) {
+      lastScan = frameTime;
       let token;
-      if (native)
+      if (qrDetector) {
         try {
-          token = (await native.detect(video))[0]?.rawValue;
+          token = (await qrDetector.detect(video))[0]?.rawValue;
         } catch {}
+      }
       if (!token && window.jsQR) {
         canvas.width = Math.min(video.videoWidth, 720);
         canvas.height = Math.round(
@@ -1035,29 +1180,37 @@ async function startCamera() {
         return;
       }
     }
-    if (cameraStream) cameraFrame = requestAnimationFrame(scan);
+    if (cameraStream) {
+      cameraFrame = requestAnimationFrame(scan);
+    }
   }
   video.onloadeddata = () => {
     cameraFrame = requestAnimationFrame(scan);
   };
 }
-root.addEventListener("input", (e) => {
-  if (["verify-token", "verify-class"].includes(e.target.id)) {
+root.addEventListener("input", (event) => {
+  if (["verify-token", "verify-class"].includes(event.target.id)) {
     const result = document.querySelector("#verify-result");
-    if (result) result.innerHTML = "";
+    if (result) {
+      result.innerHTML = "";
+    }
   }
 });
 window.addEventListener("pagehide", stopCamera);
 // Browsers throttle background timers. Refresh a displayed pass on returning.
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && session && ["pass", "classes"].includes(view))
+  if (!document.hidden && session && ["pass", "classes"].includes(view)) {
     render();
+  }
 });
 try {
   const config = await (await fetch("/auth/config")).json();
   authMode = config.mode;
   await enterApp();
 } catch (error) {
-  if (!session) login();
-  else toast(error.message, true);
+  if (!session) {
+    login();
+  } else {
+    toast(error.message, true);
+  }
 }

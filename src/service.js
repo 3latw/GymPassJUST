@@ -9,19 +9,29 @@ export class AppError extends Error {
     this.status = status;
   }
 }
-export const fail = (condition, code, message, status) => {
-  if (condition) throw new AppError(code, message, status);
-};
-const MINUTE = 60000,
-  HOUR = 60 * MINUTE,
-  DAY = 24 * HOUR;
+// إذا تحقق شرط الخطأ، نوقف الطلب ونرسل رسالة مفهومة للواجهة.
+export function fail(condition, code, message, status) {
+  if (condition) {
+    throw new AppError(code, message, status);
+  }
+}
+const MINUTE = 60000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
 export function createService(db, { clock = Date.now, secret } = {}) {
-  if (!secret || secret.length < 32)
+  if (!secret || secret.length < 32) {
     throw new Error("A signing secret of at least 32 characters is required");
-  const one = (sql, ...args) => db.prepare(sql).get(...args);
-  const all = (sql, ...args) => db.prepare(sql).all(...args);
-  const run = (sql, ...args) => db.prepare(sql).run(...args);
+  }
+  function one(sql, ...args) {
+    return db.prepare(sql).get(...args);
+  }
+  function all(sql, ...args) {
+    return db.prepare(sql).all(...args);
+  }
+  function run(sql, ...args) {
+    return db.prepare(sql).run(...args);
+  }
   const atomic = (fn) => transaction(db, fn);
   const audit = (actor, action, target, detail = "") =>
     run(
@@ -46,15 +56,21 @@ export function createService(db, { clock = Date.now, secret } = {}) {
     fail(!gymClass, "NOT_FOUND", "Class not found", 404);
     return gymClass;
   };
-  function membership(id, at = clock(), type = null, through = at) {
+  function membership(
+    userId,
+    startsAt = clock(),
+    classType = null,
+    endsAt = startsAt,
+  ) {
     return all(
       `SELECT m.*, p.name,p.types FROM memberships m JOIN plans p ON p.id=m.plan_id
       WHERE user_id=? AND starts<=? AND ends>? ORDER BY ends DESC`,
-      id,
-      at,
-      through,
+      userId,
+      startsAt,
+      endsAt,
     ).find(
-      (subscription) => !type || JSON.parse(subscription.types).includes(type),
+      (subscription) =>
+        !classType || JSON.parse(subscription.types).includes(classType),
     );
   }
   function eligible(userId, gymClass) {
@@ -64,7 +80,9 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       gymClass.type,
       gymClass.ends,
     );
-    if (!activePlan) return false;
+    if (!activePlan) {
+      return false;
+    }
     const overlappingBooking = one(
       `SELECT b.id FROM bookings b JOIN classes x ON x.id=b.class_id WHERE b.user_id=? AND b.class_id<>? AND b.state IN ('confirmed','checked_in') AND x.starts<? AND x.ends>?`,
       userId,
@@ -83,13 +101,17 @@ export function createService(db, { clock = Date.now, secret } = {}) {
   }
   function promote(classId) {
     const gymClass = getClass(classId);
-    if (gymClass.state !== "published" || clock() >= gymClass.ends) return;
-    let free = gymClass.capacity - bookedSeats(classId);
+    if (gymClass.state !== "published" || clock() >= gymClass.ends) {
+      return;
+    }
+    let availableSeats = gymClass.capacity - bookedSeats(classId);
     for (const booking of all(
       "SELECT * FROM bookings WHERE class_id=? AND state='waitlisted' ORDER BY created,id",
       classId,
     )) {
-      if (free <= 0) break;
+      if (availableSeats <= 0) {
+        break;
+      }
       if (!eligible(booking.user_id, gymClass)) {
         run("UPDATE bookings SET state='not_promoted' WHERE id=?", booking.id);
         notify(
@@ -105,7 +127,7 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         clock(),
         booking.id,
       );
-      free--;
+      availableSeats--;
       notify(
         booking.user_id,
         "promotion",
@@ -115,9 +137,10 @@ export function createService(db, { clock = Date.now, secret } = {}) {
     }
   }
   function book(userId, classId) {
+    // كل خطوات الحجز داخل معاملة واحدة حتى لا يأخذ طالبان آخر مقعد.
     return atomic(() => {
-      const gymClass = getClass(classId),
-        now = clock();
+      const gymClass = getClass(classId);
+      const now = clock();
       fail(
         gymClass.state !== "published" || now >= gymClass.starts,
         "CLASS_CLOSED",
@@ -133,47 +156,44 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         "MEMBERSHIP_REQUIRED",
         "An active membership covering this class is required",
       );
-      fail(
-        one(
-          "SELECT id FROM bookings WHERE user_id=? AND class_id=? AND state IN ('confirmed','waitlisted','checked_in','attended','no_show')",
-          userId,
-          classId,
-        ),
-        "DUPLICATE",
-        "You already booked this class",
-        409,
+      const existingBooking = one(
+        "SELECT id FROM bookings WHERE user_id=? AND class_id=? AND state IN ('confirmed','waitlisted','checked_in','attended','no_show')",
+        userId,
+        classId,
+      );
+      fail(existingBooking, "DUPLICATE", "You already booked this class", 409);
+      const overlappingBooking = one(
+        `SELECT b.id FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.user_id=?
+      AND b.state IN ('confirmed','checked_in') AND c.starts<? AND c.ends>?`,
+        userId,
+        gymClass.ends,
+        gymClass.starts,
       );
       fail(
-        one(
-          `SELECT b.id FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.user_id=?
-      AND b.state IN ('confirmed','checked_in') AND c.starts<? AND c.ends>?`,
-          userId,
-          gymClass.ends,
-          gymClass.starts,
-        ),
+        overlappingBooking,
         "OVERLAP",
         "You already have a booking at this time",
         409,
       );
-      const count = bookedSeats(classId);
-      const state = count < gymClass.capacity ? "confirmed" : "waitlisted";
+      const occupiedSeats = bookedSeats(classId);
+      let state = "waitlisted";
+      let confirmedAt = null;
+      let message = `أُضيف اسمك لقائمة انتظار ${gymClass.title}.`;
+      if (occupiedSeats < gymClass.capacity) {
+        state = "confirmed";
+        confirmedAt = now;
+        message = `تم تأكيد حجز ${gymClass.title}.`;
+      }
       const result = run(
         "INSERT INTO bookings(user_id,class_id,state,created,confirmed_at) VALUES (?,?,?,?,?)",
         userId,
         classId,
         state,
         now,
-        state === "confirmed" ? now : null,
+        confirmedAt,
       );
       const id = Number(result.lastInsertRowid);
-      notify(
-        userId,
-        state,
-        state === "confirmed"
-          ? `تم تأكيد حجز ${gymClass.title}.`
-          : `أُضيف اسمك لقائمة انتظار ${gymClass.title}.`,
-        `booking-${id}`,
-      );
+      notify(userId, state, message, `booking-${id}`);
       return { id, state };
     });
   }
@@ -241,8 +261,8 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         "You already have an active subscription to this plan",
         409,
       );
-      const starts = clock(),
-        ends = starts + plan.days * DAY;
+      const starts = clock();
+      const ends = starts + plan.days * DAY;
       const result = run(
         "INSERT INTO memberships(user_id,plan_id,starts,ends,created) VALUES (?,?,?,?,?)",
         userId,
@@ -284,7 +304,9 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         "Only the assigned instructor can cancel this class",
         403,
       );
-      if (gymClass.state === "cancelled") return { ok: true };
+      if (gymClass.state === "cancelled") {
+        return { ok: true };
+      }
       fail(
         clock() >= gymClass.ends,
         "CLASS_ENDED",
@@ -311,83 +333,104 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       return { ok: true };
     });
   }
+  function finishClasses(now) {
+    run(
+      "UPDATE bookings SET state='attended' WHERE state='checked_in' AND class_id IN (SELECT id FROM classes WHERE ends<=?)",
+      now,
+    );
+    for (const booking of all(
+      "SELECT b.id,b.user_id,c.title,c.ends FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.state='confirmed' AND c.state='published' AND c.ends<=?",
+      now,
+    )) {
+      run(
+        "UPDATE bookings SET state='no_show',no_show_at=? WHERE id=?",
+        booking.ends,
+        booking.id,
+      );
+      notify(
+        booking.user_id,
+        "no_show",
+        `تم تسجيل غيابك عن ${booking.title}.`,
+        `no-show-${booking.id}`,
+      );
+    }
+    run(
+      "UPDATE bookings SET state='not_promoted' WHERE state='waitlisted' AND class_id IN (SELECT id FROM classes WHERE ends<=? OR state='cancelled')",
+      now,
+    );
+  }
+
+  function sendReminders(now) {
+    for (const booking of all(
+      `SELECT b.id,b.user_id,c.title FROM bookings b JOIN classes c ON c.id=b.class_id
+      WHERE b.state='confirmed' AND c.starts>? AND c.starts<=?`,
+      now,
+      now + 2 * HOUR,
+    )) {
+      notify(
+        booking.user_id,
+        "reminder",
+        `تذكير بموعد ${booking.title} خلال ساعتين.`,
+        `reminder-${booking.id}`,
+      );
+    }
+    for (const subscription of all(
+      "SELECT id,user_id FROM memberships WHERE ends>? AND ends<=?",
+      now,
+      now + 3 * DAY,
+    )) {
+      notify(
+        subscription.user_id,
+        "expiry",
+        "اشتراكك ينتهي خلال ثلاثة أيام. يمكنك تجديده من صفحة العضوية.",
+        `expiry-${subscription.id}`,
+      );
+    }
+  }
+
+  function removeExpiredData(now) {
+    run("DELETE FROM used_tokens WHERE expires<=?", now);
+    run("DELETE FROM sessions WHERE expires<=?", now);
+    // Twelve month retention from latest membership end; cascading FKs remove member records.
+    const inactiveMembers = all(
+      `SELECT u.id FROM users u WHERE u.role='member' AND
+      (SELECT MAX(ends) FROM memberships m WHERE m.user_id=u.id)<?`,
+      now - 365 * DAY,
+    );
+    for (const member of inactiveMembers) {
+      run("DELETE FROM users WHERE id=?", member.id);
+      run("DELETE FROM audit WHERE actor=? OR target=?", member.id, member.id);
+    }
+    return inactiveMembers.length;
+  }
+
+  // الخادم يشغّل هذه الخطوات دورياً، حتى لو كانت صفحات الطلاب مغلقة.
   function tick() {
     return atomic(() => {
       const now = clock();
-      run(
-        "UPDATE bookings SET state='attended' WHERE state='checked_in' AND class_id IN (SELECT id FROM classes WHERE ends<=?)",
-        now,
-      );
-      for (const booking of all(
-        "SELECT b.id,b.user_id,c.title,c.ends FROM bookings b JOIN classes c ON c.id=b.class_id WHERE b.state='confirmed' AND c.state='published' AND c.ends<=?",
-        now,
-      )) {
-        run(
-          "UPDATE bookings SET state='no_show',no_show_at=? WHERE id=?",
-          booking.ends,
-          booking.id,
-        );
-        notify(
-          booking.user_id,
-          "no_show",
-          `تم تسجيل غيابك عن ${booking.title}.`,
-          `no-show-${booking.id}`,
-        );
-      }
-      run(
-        "UPDATE bookings SET state='not_promoted' WHERE state='waitlisted' AND class_id IN (SELECT id FROM classes WHERE ends<=? OR state='cancelled')",
-        now,
-      );
-      for (const booking of all(
-        `SELECT b.id,b.user_id,c.title FROM bookings b JOIN classes c ON c.id=b.class_id
-      WHERE b.state='confirmed' AND c.starts>? AND c.starts<=?`,
-        now,
-        now + 2 * HOUR,
-      ))
-        notify(
-          booking.user_id,
-          "reminder",
-          `تذكير بموعد ${booking.title} خلال ساعتين.`,
-          `reminder-${booking.id}`,
-        );
-      for (const subscription of all(
-        "SELECT id,user_id FROM memberships WHERE ends>? AND ends<=?",
-        now,
-        now + 3 * DAY,
-      ))
-        notify(
-          subscription.user_id,
-          "expiry",
-          "اشتراكك ينتهي خلال ثلاثة أيام. يمكنك تجديده من صفحة العضوية.",
-          `expiry-${subscription.id}`,
-        );
-      run("DELETE FROM used_tokens WHERE expires<=?", now);
-      run("DELETE FROM sessions WHERE expires<=?", now);
-      // Twelve month retention from latest membership end; cascading FKs remove member records.
-      const stale = all(
-        `SELECT u.id FROM users u WHERE u.role='member' AND
-      (SELECT MAX(ends) FROM memberships m WHERE m.user_id=u.id)<?`,
-        now - 365 * DAY,
-      );
-      for (const u of stale) {
-        run("DELETE FROM users WHERE id=?", u.id);
-        run("DELETE FROM audit WHERE actor=? OR target=?", u.id, u.id);
-      }
-      return { removedMembers: stale.length };
+      finishClasses(now);
+      sendReminders(now);
+      const removedMembers = removeExpiredData(now);
+      return { removedMembers };
     });
   }
   function makeToken(kind, subject) {
     fail(kind !== "membership", "INVALID_TOKEN", "Unsupported QR purpose", 403);
-    const now = clock(),
-      data = Buffer.from(
-        JSON.stringify({
-          kind,
-          sub: String(subject),
-          iat: now,
-          exp: now + 2 * MINUTE,
-        }),
-      ).toString("base64url");
-    return `${data}.${createHmac("sha256", secret).update(data).digest("base64url")}`;
+    const now = clock();
+    const payload = {
+      kind,
+      sub: String(subject),
+      iat: now,
+      exp: now + 2 * MINUTE,
+    };
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
+      "base64url",
+    );
+    // التوقيع يكشف تعديل محتوى البطاقة قبل تسجيل الحضور.
+    const signature = createHmac("sha256", secret)
+      .update(encodedPayload)
+      .digest("base64url");
+    return `${encodedPayload}.${signature}`;
   }
   function verifyToken(token, kind) {
     fail(
@@ -396,22 +439,25 @@ export function createService(db, { clock = Date.now, secret } = {}) {
       "Invalid QR token",
       403,
     );
-    const [data, signature, ...extra] = token.split("."),
-      expected = createHmac("sha256", secret)
-        .update(data || "")
-        .digest("base64url");
+    const [encodedPayload, signature, ...extraParts] = token.split(".");
+    const expectedSignature = createHmac("sha256", secret)
+      .update(encodedPayload || "")
+      .digest("base64url");
     fail(
-      extra.length ||
+      extraParts.length ||
         !signature ||
-        signature.length !== expected.length ||
-        !timingSafeEqual(Buffer.from(signature), Buffer.from(expected)),
+        signature.length !== expectedSignature.length ||
+        !timingSafeEqual(
+          Buffer.from(signature),
+          Buffer.from(expectedSignature),
+        ),
       "INVALID_TOKEN",
       "Invalid QR signature",
       403,
     );
     let payload;
     try {
-      payload = JSON.parse(Buffer.from(data, "base64url").toString());
+      payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());
     } catch {
       throw new AppError("INVALID_TOKEN", "Invalid QR payload", 403);
     }
@@ -450,11 +496,11 @@ export function createService(db, { clock = Date.now, secret } = {}) {
         "QR scanning is available from class start until class end",
         422,
       );
-      const payload = verifyToken(token, "membership"),
-        user = one(
-          "SELECT id,name,email FROM users WHERE id=? AND role='member'",
-          payload.sub,
-        );
+      const payload = verifyToken(token, "membership");
+      const user = one(
+        "SELECT id,name,email FROM users WHERE id=? AND role='member'",
+        payload.sub,
+      );
       fail(!user, "NOT_FOUND", "Student account not found", 404);
       const active = membership(user.id, clock(), gymClass.type, gymClass.ends);
       fail(
